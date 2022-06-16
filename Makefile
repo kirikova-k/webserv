@@ -9,8 +9,6 @@ CC		=	c++
 CFLAGS	=	 -MD -MP -g -std=c++98 -I include
 DEPENDS :=	$(addprefix  obj/, $(notdir  $(SRC:.cpp=.d)))
 
-
-
 .PHONY	:	all re clean fclean
 
 all		:	$(NAME)
@@ -26,12 +24,19 @@ clean	:
 
 fclean	:	clean
 			rm -f $(NAME)
+			rm -rf null.d
+			
 
 x		:	all
-			./$(NAME)
+			./$(NAME) default.conf
 
 leaks	:	all
 			leaks --atExit -- ./$(NAME)
+			
+$(OBJ)			: | $(OBJDIR)
+
+$(OBJDIR)		: 
+					mkdir $(OBJDIR)
 
 re		:	fclean all
 

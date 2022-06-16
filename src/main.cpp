@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Parser.hpp"
+#include "Server.hpp"
 
 
 int main(int ac, char **av) {
@@ -9,5 +10,7 @@ int main(int ac, char **av) {
     }
     ft::Parser parser(av[1]);
     parser.parse();
+    // ft::Server server(parser);
+
 
 }

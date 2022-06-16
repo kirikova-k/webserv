@@ -34,15 +34,16 @@ enum ValidLocKeys {
 namespace ft {
 	class Parser {
 		private:
-		Parser();
+		
 		const char* _config;
 		// std::vector<Port> _ports;
 		std::vector<Server> _servers;
 
 		public:
+		Parser();
 		Parser(const char* config);
+		Parser(Parser const  &other);
 		~Parser();
-
 		ft::ValidConfigKeys _validConfigParams;
 
 		void parse();
@@ -55,6 +56,7 @@ namespace ft {
 		void checkAllKeys(std::vector<std::string> config);
 		int easyFind(std::string word, std::string line);
 		int checkBrackets(std::vector<std::string> file, size_t *line);
+	
 	};
 }
 

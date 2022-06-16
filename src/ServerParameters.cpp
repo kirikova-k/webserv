@@ -15,10 +15,10 @@ ft::ValidConfigKeys::ValidConfigKeys() {
 		servParams.push_back(validServParams[i]);
 	}
 
-	std::string allParams[] = { "listen", "server", "server_name", "location", "autoindex", "root", "index", "methods", "client_max_body_size", "error_page", "redirection", "path_cgi", "bin_path_py", "bin_path_sh", "upload_path", ";", "{", "}" };
+	std::string allParams[] = { "listen", "server", "server_name", "location", "autoindex", "root", "index", "methods", "client_max_body_size", "error_page", "redirection", "path_cgi", "bin_path_py", "bin_path_sh", "upload_path", ";", "{", "}", "" };
 
-	for (size_t i = 0; i < 18; i++) {
-		servKeys[allParams[i]];
+	for (size_t i = 0; i < 19; i++) {
+		servKeys.push_back(allParams[i]);
 	}
 }
 

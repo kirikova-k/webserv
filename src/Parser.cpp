@@ -11,6 +11,9 @@ ft::Parser::Parser(const char *config) {
 }
 
 ft::Parser::~Parser() {}
+ft::Parser::Parser(const Parser &other) {
+	 *this = other;
+}
 
 void ft::Parser::parse () {
 	std::vector<std::string> config;
@@ -171,8 +174,15 @@ std::vector<std::string> ft::Parser::checkAndClean(std::string argv) {
 }
 
 int ft::Parser::validKeys(std::string config) {
-	if (_validConfigParams.servKeys.find(config)->first == config)
-		return 0;
+
+	std::vector<std::string>::iterator it;
+	it = _validConfigParams.servKeys.begin();
+	while (it != _validConfigParams.servKeys.end()) {
+		if (*it == config) {
+			return 0;
+		}
+		it++;
+	}
 	return -1;
 }
 
