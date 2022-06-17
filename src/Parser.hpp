@@ -59,9 +59,13 @@ namespace ft {
 		void serversInfo(size_t index, std::vector<std::string> file, size_t start, size_t end);
 		void fillConfig(std::string key, std::string line, size_t index, size_t caseKey);
 		void fillHostPort(std::string key, std::string line, size_t index);
-		void fillServerName(std::string key, std::string line, ssize_t index);
+		void fillServerName(std::string key, std::string line, size_t index);
+		void fillAutoindex(std::string key, std::string line, size_t index);
+		void fillServerRoot(std::string key, std::string line, size_t index);
+		void fillIndex(std::string key, std::string line, size_t index);
+		void fillRootMethods(std::string key, std::string line, size_t index);
 
-		
+
 		std::vector<std::string> splitString(std::string key, std::string line);
 		int validHost(std::string value);
 		int checkPortVal (std::string str);

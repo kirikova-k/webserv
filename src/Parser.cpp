@@ -50,6 +50,14 @@ for (int i=0; i < _servers.size(); i++) {
 	std::cout << "Host: |" << _servers[i].getHost() << "|" << std::endl;
 	std::cout << "Port: |" << _servers[i].getPort() << "|" << std::endl;
 	std::cout << "Name: |" << _servers[i].getName() << "|" << std::endl;
+	std::cout << "AutoIndex: |" << std::boolalpha << _servers[i].getAutoIndex() << "|" << std::endl;
+	std::cout << "Root: |" << _servers[i].getRoot() << "|" << std::endl;
+	std::cout << "Index: |" << _servers[i].getIndex() << "|" << std::endl;
+	std::cout << "Methods: ";
+	for (int k=0; k<_servers[i].getMethods().size(); k++) {
+		std::cout << _servers[i].getMethods()[k] << " ";
+	}
+	std::cout <<  std::endl << "------------------------" << std::endl;
 }
 
 //~~~~~~~PRINT~~~~~~~~~~//
@@ -80,22 +88,18 @@ void ft::Parser::fillConfig(std::string key, std::string line, size_t index, siz
 			break;
 		case Server_name:
 			fillServerName(key, line, index);
-			std::cout << "not ready yet!\n";
 			break;
 		case Autoindex:
-			// fillAutoindex(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillAutoindex(key, line, index);
 			break;
 		case Root:
-			// fillServerRoot(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillServerRoot(key, line, index);
 			break;
 		case Index_page:
-			// fillIndex(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillIndex(key, line, index);
 			break;
 		case Methods:
-			// fillRootMethods(key, line, index);
+			fillRootMethods(key, line, index);
 			std::cout << "not ready yet!\n";
 			break;
 		case Client_max_body_size:
@@ -113,7 +117,48 @@ void ft::Parser::fillConfig(std::string key, std::string line, size_t index, siz
 	}
 }
 
-void ft::Parser::fillServerName(std::string key, std::string line, ssize_t index) {
+void ft::Parser::fillRootMethods(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (value.size() < 1 or value.size() > 3)
+		throw std::invalid_argument("Parser error: root methods error");
+	for (size_t i = 0; i < value.size(); i++) {
+		if (value[i] != "GET" and value[i] != "POST" and value[i] != "DELETE")
+			throw std::invalid_argument("Parser error: wrong root method");
+	}
+	_servers[index].setMethods(value);
+}
+
+void ft::Parser::fillIndex(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!_servers[index].getIndex().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: root index page error");
+	_servers[index].setIndex(value[0]);
+}
+
+void ft::Parser::fillServerRoot(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!_servers[index].getRoot().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: root error");
+	_servers[index].setRoot(value[0]);
+}
+
+void ft::Parser::fillAutoindex(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (value.size() != 1 or (value[0] != "on" and value[0] != "off"))
+		throw std::invalid_argument("Parser error: root autoindex error");
+	else if (value[0] == "on")
+		_servers[index].setAutoIndex(true);
+}
+
+void ft::Parser::fillServerName(std::string key, std::string line, size_t index) {
 	std::vector<std::string> value;
 
 	value = splitString(key, line);
