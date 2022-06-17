@@ -8,9 +8,7 @@
 namespace ft {
 
 	class Location {
-
 	private:
-
 		std::string path;
 		std::string root;
 		std::string index;
@@ -20,7 +18,6 @@ namespace ft {
 		std::map<int, std::string> errorPages;
 
 	public:
-
 		Location();
 		Location &operator=(const Location &other);
 		~Location();
@@ -47,7 +44,6 @@ namespace ft {
 		const std::map<int, std::string> &getErrorPages() const;
 
 	};
-
 }
 
 #endif 

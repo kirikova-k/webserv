@@ -36,7 +36,7 @@ namespace ft {
 		private:
 		
 		const char* _config;
-		// std::vector<Port> _ports;
+		// std::vector<Port> _ports; //??
 		std::vector<Server> _servers;
 
 		public:
@@ -56,6 +56,15 @@ namespace ft {
 		void checkAllKeys(std::vector<std::string> config);
 		int easyFind(std::string word, std::string line);
 		int checkBrackets(std::vector<std::string> file, size_t *line);
+		void serversInfo(size_t index, std::vector<std::string> file, size_t start, size_t end);
+		void fillConfig(std::string key, std::string line, size_t index, size_t caseKey);
+		void fillHostPort(std::string key, std::string line, size_t index);
+		void fillServerName(std::string key, std::string line, ssize_t index);
+
+		
+		std::vector<std::string> splitString(std::string key, std::string line);
+		int validHost(std::string value);
+		int checkPortVal (std::string str);
 	
 	};
 }

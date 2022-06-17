@@ -31,7 +31,7 @@ void ft::Parser::parse () {
 			}
 			end = line;
 			_servers.push_back(Server());
-			// serversInfo(_servers.size() - 1, config, start, end);
+			serversInfo(_servers.size() - 1, config, start, end);
 		}
 		else {
 			throw std::invalid_argument("Parser error: server not found");
@@ -45,8 +45,180 @@ for(int i=0; i < config.size(); i++){
    std::cout << "|" << config[i] << "|\n";
 }
 std::cout << std::endl;
+
+for (int i=0; i < _servers.size(); i++) {
+	std::cout << "Host: |" << _servers[i].getHost() << "|" << std::endl;
+	std::cout << "Port: |" << _servers[i].getPort() << "|" << std::endl;
+	std::cout << "Name: |" << _servers[i].getName() << "|" << std::endl;
+}
+
 //~~~~~~~PRINT~~~~~~~~~~//
 
+}
+
+void ft::Parser::serversInfo(size_t index, std::vector<std::string> file, size_t start, size_t end) {
+	ft::ValidConfigKeys rootParams;
+	std::string param;
+
+	while (start < end) {
+		for (size_t i = 0; i < rootParams.servParams.size(); i++) {
+			if (!easyFind(rootParams.servParams[i], file[start]))
+				fillConfig(rootParams.servParams[i], file[start], index, i);
+			else if (!easyFind("location", file[start])) {
+				// locationsInfo(file, index, &start, end);
+				std::cout << "locations not ready yet!\n";
+			}
+		}
+		start++;
+	}
+}
+
+void ft::Parser::fillConfig(std::string key, std::string line, size_t index, size_t caseKey) {
+	switch (caseKey) {
+		case Host_port:
+			fillHostPort(key, line, index);
+			break;
+		case Server_name:
+			fillServerName(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Autoindex:
+			// fillAutoindex(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Root:
+			// fillServerRoot(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Index_page:
+			// fillIndex(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Methods:
+			// fillRootMethods(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Client_max_body_size:
+			// fillRootMaxBodySize(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case UploadPath:
+			// fillUploadPath(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+		case Error_page:
+			// fillRootErrorPages(key, line, index);
+			std::cout << "not ready yet!\n";
+			break;
+	}
+}
+
+void ft::Parser::fillServerName(std::string key, std::string line, ssize_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!_servers[index].getName().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: server name error");
+	_servers[index].setName(value[0]);
+}
+
+void ft::Parser::fillHostPort(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (_servers[index].getHost() != "" or _servers[index].getPort() or value.size() != 1)
+		throw std::invalid_argument("Parser error: host/port error");
+	value = checkHost(value[0]);
+	if (value.size() > 1) {
+		_servers[index].setHost(value[0]);
+		_servers[index].setPort(checkPortVal(value[1]));
+	}
+	else {
+		if (validHost(value[0]))
+			_servers[index].setPort(checkPortVal(value[0]));
+		else
+			_servers[index].setPort(80);
+	}
+}
+
+int ft::Parser::validHost(std::string value) {
+	size_t pos = value.find(".");
+
+	if (pos != std::string::npos)
+		return 0;
+	return 1;
+}
+
+int ft::Parser::checkPortVal (std::string str) {
+	int val = 0;
+
+	for (size_t i = 0; i < str.size(); i++) {
+		if (!isdigit(str[i]))
+			throw std::invalid_argument("Parser error: not digit");
+	}
+	val = static_cast<int>(strtod(str.c_str(), 0));
+	if (val < 0 or val > 65535)
+		throw std::invalid_argument("Parser error: number out of range");
+	return val;
+}
+
+std::vector<std::string> ft::Parser::checkHost(std::string host) {
+	size_t i = 0;
+	size_t j = 0;
+	size_t dot = 0;
+	std::vector<std::string> hostPort;
+
+	while(host[i]) {
+		if (isdigit(host[i]))
+			i++;
+		else if (host[i] == '.') {
+			if (j > 3)
+				throw std::invalid_argument("Parser error: wrong format");
+			j = 0;
+			dot++;
+			i++;
+		}
+		else if (host[i] == ':' and i) {
+			hostPort.push_back(host.substr(0, i));
+			hostPort.push_back(host.substr(i + 1, host.size()));
+			return hostPort;
+		}
+		else
+			throw std::invalid_argument("Parser error: wrong number");
+		j++;
+	}
+	if (!hostPort.size())
+		hostPort.push_back(host.substr(0, i));
+	else
+		throw std::invalid_argument("Parser error: wrong host/port");
+	return hostPort;
+}
+
+std::vector<std::string> ft::Parser::splitString(std::string key, std::string line) {
+	std::vector<std::string> value;
+	size_t pos = 0;
+	size_t i = 0;
+
+	pos = (line.find(key) + key.size());
+	while (line[pos] == ' ' or line[pos] == '\t') {
+		pos++;
+	}
+	i = pos;
+	while (i < line.size()) {
+		pos = i;
+		if (line[i] == ' ' or line[i] == '\t') {
+			while (line[i] == ' ' or line[i] == '\t') {
+				i++;
+				pos++;
+			}
+		}
+		else {
+			while (line[i] and line[i] != ' ' and line[i] != '\t')
+				i++;
+			value.push_back(line.substr(pos, i - pos));
+		}
+	}
+	return value;
 }
 
 int ft::Parser::checkBrackets(std::vector<std::string> file, size_t *line) {

@@ -1,4 +1,4 @@
-SRC		=	$(addprefix src/, main.cpp Parser.cpp Server.cpp ServerParameters.cpp)
+SRC		=	$(addprefix src/, main.cpp Parser.cpp Server.cpp ServerParameters.cpp Location.cpp)
 OBJDIR	=	obj
 SRCDIR	=	src
 OBJ		=	$(addprefix  obj/, $(notdir  $(SRC:.cpp=.o)))
