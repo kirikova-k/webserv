@@ -2,6 +2,7 @@
 #define PARSER_HPP
 #include <vector>
 #include "Server.hpp"
+#include "Location.hpp"
 #include "ServerParameters.hpp"
 
 enum ValidRootKeys {
@@ -56,6 +57,9 @@ namespace ft {
 		void checkAllKeys(std::vector<std::string> config);
 		int easyFind(std::string word, std::string line);
 		int checkBrackets(std::vector<std::string> file, size_t *line);
+		std::vector<std::string> splitString(std::string key, std::string line);
+		int validHost(std::string value);
+		int checkPortVal (std::string str);
 		void serversInfo(size_t index, std::vector<std::string> file, size_t start, size_t end);
 		void fillConfig(std::string key, std::string line, size_t index, size_t caseKey);
 		void fillHostPort(std::string key, std::string line, size_t index);
@@ -64,12 +68,23 @@ namespace ft {
 		void fillServerRoot(std::string key, std::string line, size_t index);
 		void fillIndex(std::string key, std::string line, size_t index);
 		void fillRootMethods(std::string key, std::string line, size_t index);
+		void fillRootMaxBodySize(std::string key, std::string line, size_t index);
+		void fillUploadPath(std::string key, std::string line, ssize_t index);
+		void fillRootErrorPages(std::string key, std::string line, ssize_t index);
+		std::pair<int,std::string> fillErrorPage(std::vector<std::string> value);
+		void locationsInfo(std::vector<std::string> file, size_t index, size_t *start, size_t end);
+		void fillLocation(std::string key, std::string line, ft::Location& location, size_t caseKey);
+		void fillLocationName(std::string key, std::string line, ft::Location& location);
+		void fillLocationRoot(std::string key, std::string line, ft::Location& location);
+		void fillLocationRedirection(std::string key, std::string line, ft::Location& location);
+		void fillLocationMethods(std::string key, std::string line, ft::Location& location);
+		void fillLocationIndex(std::string key, std::string line, ft::Location& location);
+		void fillLocationAutoindex(std::string key, std::string line, ft::Location& location);
+		void fillLocationUploadPath(std::string key, std::string line, ft::Location& location);
+		void fillLocationErrorsPages(std::string key, std::string line, ft::Location& location);
+		void fillLocationScripts(std::string key, std::string line, ft::Location& location);
 
 
-		std::vector<std::string> splitString(std::string key, std::string line);
-		int validHost(std::string value);
-		int checkPortVal (std::string str);
-	
 	};
 }
 

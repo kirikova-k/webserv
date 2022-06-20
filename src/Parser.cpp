@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "Location.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -40,7 +41,7 @@ void ft::Parser::parse () {
 	}
 	// config.clear();
 
-//~~~~~~~PRINT~~~~~~~~~~//
+//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
 for(int i=0; i < config.size(); i++){
    std::cout << "|" << config[i] << "|\n";
 }
@@ -50,18 +51,74 @@ for (int i=0; i < _servers.size(); i++) {
 	std::cout << "Host: |" << _servers[i].getHost() << "|" << std::endl;
 	std::cout << "Port: |" << _servers[i].getPort() << "|" << std::endl;
 	std::cout << "Name: |" << _servers[i].getName() << "|" << std::endl;
-	std::cout << "AutoIndex: |" << std::boolalpha << _servers[i].getAutoIndex() << "|" << std::endl;
-	std::cout << "Root: |" << _servers[i].getRoot() << "|" << std::endl;
-	std::cout << "Index: |" << _servers[i].getIndex() << "|" << std::endl;
+	std::cout << "AutoIndex: |" << std::boolalpha << _servers[i].getAutoIndex() << "|\n";
+	std::cout << "Root: ";
+	(!(_servers[i].getRoot().empty())?std::cout << "|" << _servers[i].getRoot() << "|" <<\
+	 std::endl:std::cout << std::endl);
+	std::cout << "Index: ";
+	(!( _servers[i].getIndex().empty())?std::cout << "|" << _servers[i].getIndex()\
+	 << "|" << std::endl:std::cout << "\n");
 	std::cout << "Methods: ";
 	for (int k=0; k<_servers[i].getMethods().size(); k++) {
-		std::cout << _servers[i].getMethods()[k] << " ";
+		std::cout << "|" << _servers[i].getMethods()[k] << "| ";
 	}
-	std::cout <<  std::endl << "------------------------" << std::endl;
-}
+	std::cout << "\nMaxBodySize: ";
+	(_servers[i].getMaxBodySize() != 0?std::cout << "|" << _servers[i].getMaxBodySize()\
+	 << "|\n":std::cout << "\n");
+	std::cout << "UploadPath: |" << _servers[i].getUploadPath() << "|" << std::endl;
+	
+	std::cout << "ErrorPages: ";
+	std::map<int, std::string> errors = _servers[i].getErrorPages();
+	std::map<int, std::string>::iterator it_begin = errors.begin();
+	while (it_begin != errors.end()) {
+		std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n";
+		++it_begin;
+	}
+	std::cout <<  std::endl;
+	std::cout << "\tLocations: \n";
+	for (int j=0; j<_servers[i].getLocations().size(); j++) {
+		std::cout << "--------Name: |" << _servers[i].getLocations()[j].getName() << "|\n";
+		std::cout << "\tAutoIndex: |" << std::boolalpha <<\
+		 _servers[i].getLocations()[j].getAutoIndex() << "|" << std::endl;
+		std::cout << "\tRoot: ";
+		(!(_servers[i].getLocations()[j].getRoot().empty())?std::cout << "|" << \
+		_servers[i].getLocations()[j].getRoot() << "|" << std::endl:std::cout << std::endl);
+		std::cout << "\tRedirection: ";
+		(!(_servers[i].getLocations()[j].getRedirection().empty())?\
+			std::cout << "|" << _servers[i].getLocations()[j].getRedirection() << "| |"\
+		 << _servers[i].getLocations()[j].getRedirectionCode() << "|\n":std::cout << "\n");
+		std::cout << "\tMethods: ";
+		if (!_servers[i].getLocations().empty()) {
+			for (int x=0; x<_servers[i].getLocations()[j].getMethods().size(); x++) {
+				std::cout << "|" << _servers[i].getLocations()[j].getMethods()[x] << "| ";
+			} std::cout <<  std::endl;
+		}
+		std::cout << "\tIndex: ";
+		(!( _servers[i].getLocations()[j].getIndex().empty())?std::cout << "|"\
+		 << _servers[i].getLocations()[j].getIndex() << "|" << std::endl:std::cout << "\n");
+		std::cout << "\tErrorPages: ";
+		std::map<int, std::string> errors = _servers[i].getLocations()[j].getErrorPages();
+		std::map<int, std::string>::iterator it_begin = errors.begin();
+		while (it_begin != errors.end()) {
+			std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n\t";
+			++it_begin;
+		}
+		std::cout <<  std::endl;
+		std::cout << "\tScripts: ";
+		std::map<std::string, std::string> scripts = _servers[i].getLocations()[j].getScripts();
+		std::map<std::string, std::string>::iterator start = scripts.begin();
+		while (start != scripts.end()) {
+			std::cout << "|" << start->first << "|" << start->second << "|\n\t";
+			++start;
+		}
+		std::cout <<  std::endl;
+	}
+	
 
-//~~~~~~~PRINT~~~~~~~~~~//
-
+	std::cout <<   "------------------------" << std::endl;
+	}
+	
+//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
 }
 
 void ft::Parser::serversInfo(size_t index, std::vector<std::string> file, size_t start, size_t end) {
@@ -73,12 +130,175 @@ void ft::Parser::serversInfo(size_t index, std::vector<std::string> file, size_t
 			if (!easyFind(rootParams.servParams[i], file[start]))
 				fillConfig(rootParams.servParams[i], file[start], index, i);
 			else if (!easyFind("location", file[start])) {
-				// locationsInfo(file, index, &start, end);
-				std::cout << "locations not ready yet!\n";
+				locationsInfo(file, index, &start, end);
 			}
 		}
 		start++;
 	}
+}
+
+
+void ft::Parser::locationsInfo(std::vector<std::string> file, size_t index, size_t *start, size_t end) {
+	ft::ValidConfigKeys locations;
+	std::vector<std::string> value;
+	size_t line = *start;
+	size_t pos = 0;
+
+	_servers[index].getLocations().push_back(Location());
+	size_t indexLocation = _servers[index].getLocations().size() - 1;
+	pos = file[*start].find("location") + strlen("location");
+	while (line < end ) {
+		while (file[line][pos]) {
+			if (file[line][pos] == '}') {
+				end = line;
+				break ;
+			}
+			pos++;
+		}
+		pos = 0;
+		line++;
+	}
+	while (*start < end) {
+		for (size_t i = 0; i < locations.locParams.size(); i++) {
+			if (!easyFind(locations.locParams[i], file[*start])) {
+				fillLocation(locations.locParams[i], file[*start], _servers[index].getLocations()[indexLocation], i);
+			}
+		}
+		(*start)++;
+	}
+}
+
+void ft::Parser::fillLocation(std::string key, std::string line, ft::Location& location, size_t caseKey) {
+	std::vector<std::string> value;
+
+	switch (caseKey) {
+		case Location_name:
+			fillLocationName(key, line, location);
+			break;
+		case Location_methods:
+			fillLocationMethods(key, line, location);
+			break;
+		case Location_root:
+			fillLocationRoot(key, line, location);
+			break;
+		case Location_redirection:
+			fillLocationRedirection(key, line, location);
+			break;
+		case Location_error_page:
+			fillLocationErrorsPages(key, line, location);
+			break;
+		case Location_index:
+			fillLocationIndex(key, line, location);
+			break;
+		case LocationAutoindex:
+			fillLocationAutoindex(key, line, location);
+			break;
+		case LocationUploadPath:
+			fillLocationUploadPath(key, line, location);
+			break;
+		case Bin_path_py:
+			fillLocationScripts(key, line, location);
+			break;
+		case Bin_path_sh:
+			fillLocationScripts(key, line, location);
+			break;
+	}
+}
+
+void ft::Parser::fillLocationScripts(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	std::pair <std::string, std::string> str;
+	str.first = key;
+	str.second = value[0];
+	if (value.size() != 1 or str.first.empty() or str.second.empty())
+		throw std::invalid_argument("Parser error: wrong scripts format");
+	location.setScriptsVal(str.first, str.second);
+}
+
+void ft::Parser::fillLocationErrorsPages(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	std::pair <int, std::string> str;
+	str.first = fillErrorPage(value).first;
+	str.second = fillErrorPage(value).second;
+	if (value.size() < 2 or !str.first or str.second.empty())
+		throw std::invalid_argument("Parser error: wrong location error page format");
+	location.setErrorPageVal(str.first, str.second);
+}
+
+void ft::Parser::fillLocationUploadPath(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!location.getUploadPath().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: wrong location directory to upload");
+	location.setUploadPath(value[0]);
+}
+
+void ft::Parser::fillLocationAutoindex(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (value.size() != 1 or (value[0] != "on" and value[0] != "off"))
+		throw std::invalid_argument("Parser error: location Autoindex error");
+	else if (value[0] == "on")
+		location.setAutoIndex(true);
+}
+
+void ft::Parser::fillLocationIndex(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!location.getIndex().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: wrong lcoation index page");
+	location.setIndex(value[0]);
+}
+
+void ft::Parser::fillLocationMethods(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (value.size() < 1 or value.size() > 3)
+		throw std::invalid_argument("Parser error: location methods error");
+	for (size_t i = 0; i < value.size(); i++) {
+		if (value[i] != "GET" and value[i] != "POST" and value[i] != "DELETE")
+			throw std::invalid_argument("Parser error: wrong location method");
+	}
+	location.setMethods(value);
+}
+
+void ft::Parser::fillLocationRedirection(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!location.getRedirection().empty() or value.size() != 2)//хз куда и как это парсить
+		throw std::invalid_argument("Parser error: location redirection error");
+	location.setRedirection(value[0]);
+	int code = checkPortVal(value[1]);
+	if (code != 302)//и что это за код
+		throw std::invalid_argument("Parser error: wrong number, you can use only code 302");
+	location.setRedirectionCode(code);
+}
+
+void ft::Parser::fillLocationRoot(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!location.getRoot().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: root location error");
+	location.setRoot(value[0]);
+}
+
+void ft::Parser::fillLocationName(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!location.getName().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: location error");
+	location.setName(value[0]);
 }
 
 void ft::Parser::fillConfig(std::string key, std::string line, size_t index, size_t caseKey) {
@@ -100,20 +320,63 @@ void ft::Parser::fillConfig(std::string key, std::string line, size_t index, siz
 			break;
 		case Methods:
 			fillRootMethods(key, line, index);
-			std::cout << "not ready yet!\n";
 			break;
 		case Client_max_body_size:
-			// fillRootMaxBodySize(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillRootMaxBodySize(key, line, index);
 			break;
 		case UploadPath:
-			// fillUploadPath(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillUploadPath(key, line, index);
 			break;
 		case Error_page:
-			// fillRootErrorPages(key, line, index);
-			std::cout << "not ready yet!\n";
+			fillRootErrorPages(key, line, index);
 			break;
+	}
+}
+
+void ft::Parser::fillRootErrorPages(std::string key, std::string line, ssize_t index) {
+	std::vector<std::string> value;
+
+	std::pair <int, std::string> str;
+	value = splitString(key, line);
+	str.first = fillErrorPage(value).first;
+	str.second = fillErrorPage(value).second;
+	if (value.size() < 2 or !str.first or str.second.empty())
+		throw std::invalid_argument("Parser error: wrong root error page format");
+	_servers[index].setErrorPageVal(str.first, str.second);
+}
+
+std::pair<int,std::string> ft::Parser::fillErrorPage(std::vector<std::string> value) {
+	std::pair<int,std::string> error;
+
+	error.first = checkPortVal(value[0]);
+	error.second = value[1];
+	if (value.size() > 2)
+		throw std::invalid_argument("Parser error: invalid error page info");
+	return error;
+}
+
+void ft::Parser::fillUploadPath(std::string key, std::string line, ssize_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (!_servers[index].getUploadPath().empty() or value.size() != 1)
+		throw std::invalid_argument("Parser error: root directory to upload error");
+	_servers[index].setUploadPath(value[0]);
+}
+
+void ft::Parser::fillRootMaxBodySize(std::string key, std::string line, size_t index) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (_servers[index].getMaxBodySize() != 0 or value.size() != 1)
+		throw std::invalid_argument("Parser error: root max body size error");
+	if (value[0][value[0].size() - 1] == 'M') {
+		value[0] = value[0].substr(0, value[0].size() - 1);
+		_servers[index].setMaxBodySize(checkPortVal(value[0]) * 1024 * 1024);
+	} else if (isdigit(value[0][value[0].size() - 1])) {
+		_servers[index].setMaxBodySize(checkPortVal(value[0]) * 1024);
+	} else {
+		throw std::invalid_argument("Parser error: wrong value root MaxBodySize");
 	}
 }
 

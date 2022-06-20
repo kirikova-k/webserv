@@ -19,6 +19,7 @@ namespace ft {
 		int maxBodySize;
 		std::vector<std::string> methods;
 		std::vector<Location> locations;
+		std::map<int, std::string> errorPages;
 
 		public:
 		Server();
@@ -53,7 +54,12 @@ namespace ft {
 		const std::vector<std::string> &getMethods() const;
 
 		void setLocations(const std::vector<Location> &_locations);
-		const std::vector<Location>  &getLocations() const;
+		std::vector<Location>  &getLocations();
+
+		void setErrorPages(const std::map<int, std::string> &_errorPages);
+		const std::map<int, std::string> &getErrorPages();
+
+		void setErrorPageVal(const int& code, const std::string& path);
 
 	};
 }

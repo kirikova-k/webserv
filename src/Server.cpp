@@ -12,7 +12,8 @@ ft::Server::Server() {
 	root = "";
 	uploadPath = "";
 	methods = std::vector<std::string>();
-    locations = std::vector<Location>();
+    locations = std::vector<ft::Location>();
+	errorPages = std::map<int, std::string>();
 }
 ft::Server::~Server() {}
 
@@ -22,6 +23,7 @@ ft::Server &ft::Server::operator=(const Server &rhs) {
 	this->server_name = rhs.server_name;
 	this->maxBodySize = rhs.maxBodySize;
 	this->autoindex = rhs.autoindex;
+	errorPages = rhs.errorPages;
 	return *this;
 }
 
@@ -83,6 +85,16 @@ const std::vector<std::string> &ft::Server::getMethods() const {
 void ft::Server::setLocations(const std::vector<Location> &_locations) {
 	locations = _locations;
 }
-const std::vector<ft::Location>  &ft::Server::getLocations() const {
+std::vector<ft::Location>  &ft::Server::getLocations() {
 	return locations;
+}
+void ft::Server::setErrorPages(const std::map<int, std::string> &_errorPages) {
+	errorPages = _errorPages;
+}
+const std::map<int, std::string> &ft::Server::getErrorPages() {
+	return errorPages;
+}
+
+void ft::Server::setErrorPageVal(const int& code, const std::string& path){
+	errorPages[code] = path;
 }

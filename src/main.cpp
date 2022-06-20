@@ -9,8 +9,15 @@ int main(int ac, char **av) {
         return 0;
     }
     ft::Parser parser(av[1]);
-    parser.parse();
-    // ft::Server server(parser);
-
-
+    try
+    {
+        parser.parse();
+    }
+   	catch (std::invalid_argument& e) {
+		std::cout << e.what() << std::endl;
+	}
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 }
