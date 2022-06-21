@@ -1,5 +1,5 @@
-#include "Server.hpp"
-#include "Parser.hpp"
+#include "../inc/Server.hpp"
+#include "../inc/Parser.hpp"
 
 
 ft::Server::Server() {

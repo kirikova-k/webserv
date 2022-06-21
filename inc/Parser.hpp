@@ -46,6 +46,7 @@ namespace ft {
 		Parser(Parser const  &other);
 		~Parser();
 		ft::ValidConfigKeys _validConfigParams;
+		std::vector<ft::Server> &getServers();
 
 		void parse();
 		std::vector<std::string> checkAndClean(std::string argv);

@@ -1,5 +1,5 @@
-#include "Parser.hpp"
-#include "Location.hpp"
+#include "../inc/Parser.hpp"
+#include "../inc/Location.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -39,84 +39,84 @@ void ft::Parser::parse () {
 		}
 		line++;
 	}
-	// config.clear();
+	config.clear();
 
 //~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
-for(int i=0; i < config.size(); i++){
-   std::cout << "|" << config[i] << "|\n";
-}
-std::cout << std::endl;
+// for(int i=0; i < config.size(); i++){
+//    std::cout << "|" << config[i] << "|\n";
+// }
+// std::cout << std::endl;
 
-for (int i=0; i < _servers.size(); i++) {
-	std::cout << "Host: |" << _servers[i].getHost() << "|" << std::endl;
-	std::cout << "Port: |" << _servers[i].getPort() << "|" << std::endl;
-	std::cout << "Name: |" << _servers[i].getName() << "|" << std::endl;
-	std::cout << "AutoIndex: |" << std::boolalpha << _servers[i].getAutoIndex() << "|\n";
-	std::cout << "Root: ";
-	(!(_servers[i].getRoot().empty())?std::cout << "|" << _servers[i].getRoot() << "|" <<\
-	 std::endl:std::cout << std::endl);
-	std::cout << "Index: ";
-	(!( _servers[i].getIndex().empty())?std::cout << "|" << _servers[i].getIndex()\
-	 << "|" << std::endl:std::cout << "\n");
-	std::cout << "Methods: ";
-	for (int k=0; k<_servers[i].getMethods().size(); k++) {
-		std::cout << "|" << _servers[i].getMethods()[k] << "| ";
-	}
-	std::cout << "\nMaxBodySize: ";
-	(_servers[i].getMaxBodySize() != 0?std::cout << "|" << _servers[i].getMaxBodySize()\
-	 << "|\n":std::cout << "\n");
-	std::cout << "UploadPath: |" << _servers[i].getUploadPath() << "|" << std::endl;
+// for (int i=0; i < _servers.size(); i++) {
+// 	std::cout << "Host: |" << _servers[i].getHost() << "|" << std::endl;
+// 	std::cout << "Port: |" << _servers[i].getPort() << "|" << std::endl;
+// 	std::cout << "Name: |" << _servers[i].getName() << "|" << std::endl;
+// 	std::cout << "AutoIndex: |" << std::boolalpha << _servers[i].getAutoIndex() << "|\n";
+// 	std::cout << "Root: ";
+// 	(!(_servers[i].getRoot().empty())?std::cout << "|" << _servers[i].getRoot() << "|" <<\
+// 	 std::endl:std::cout << std::endl);
+// 	std::cout << "Index: ";
+// 	(!( _servers[i].getIndex().empty())?std::cout << "|" << _servers[i].getIndex()\
+// 	 << "|" << std::endl:std::cout << "\n");
+// 	std::cout << "Methods: ";
+// 	for (int k=0; k<_servers[i].getMethods().size(); k++) {
+// 		std::cout << "|" << _servers[i].getMethods()[k] << "| ";
+// 	}
+// 	std::cout << "\nMaxBodySize: ";
+// 	(_servers[i].getMaxBodySize() != 0?std::cout << "|" << _servers[i].getMaxBodySize()\
+// 	 << "|\n":std::cout << "\n");
+// 	std::cout << "UploadPath: |" << _servers[i].getUploadPath() << "|" << std::endl;
 	
-	std::cout << "ErrorPages: ";
-	std::map<int, std::string> errors = _servers[i].getErrorPages();
-	std::map<int, std::string>::iterator it_begin = errors.begin();
-	while (it_begin != errors.end()) {
-		std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n";
-		++it_begin;
-	}
-	std::cout <<  std::endl;
-	std::cout << "\tLocations: \n";
-	for (int j=0; j<_servers[i].getLocations().size(); j++) {
-		std::cout << "--------Name: |" << _servers[i].getLocations()[j].getName() << "|\n";
-		std::cout << "\tAutoIndex: |" << std::boolalpha <<\
-		 _servers[i].getLocations()[j].getAutoIndex() << "|" << std::endl;
-		std::cout << "\tRoot: ";
-		(!(_servers[i].getLocations()[j].getRoot().empty())?std::cout << "|" << \
-		_servers[i].getLocations()[j].getRoot() << "|" << std::endl:std::cout << std::endl);
-		std::cout << "\tRedirection: ";
-		(!(_servers[i].getLocations()[j].getRedirection().empty())?\
-			std::cout << "|" << _servers[i].getLocations()[j].getRedirection() << "| |"\
-		 << _servers[i].getLocations()[j].getRedirectionCode() << "|\n":std::cout << "\n");
-		std::cout << "\tMethods: ";
-		if (!_servers[i].getLocations().empty()) {
-			for (int x=0; x<_servers[i].getLocations()[j].getMethods().size(); x++) {
-				std::cout << "|" << _servers[i].getLocations()[j].getMethods()[x] << "| ";
-			} std::cout <<  std::endl;
-		}
-		std::cout << "\tIndex: ";
-		(!( _servers[i].getLocations()[j].getIndex().empty())?std::cout << "|"\
-		 << _servers[i].getLocations()[j].getIndex() << "|" << std::endl:std::cout << "\n");
-		std::cout << "\tErrorPages: ";
-		std::map<int, std::string> errors = _servers[i].getLocations()[j].getErrorPages();
-		std::map<int, std::string>::iterator it_begin = errors.begin();
-		while (it_begin != errors.end()) {
-			std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n\t";
-			++it_begin;
-		}
-		std::cout <<  std::endl;
-		std::cout << "\tScripts: ";
-		std::map<std::string, std::string> scripts = _servers[i].getLocations()[j].getScripts();
-		std::map<std::string, std::string>::iterator start = scripts.begin();
-		while (start != scripts.end()) {
-			std::cout << "|" << start->first << "|" << start->second << "|\n\t";
-			++start;
-		}
-		std::cout <<  std::endl;
-	}
+// 	std::cout << "ErrorPages: ";
+// 	std::map<int, std::string> errors = _servers[i].getErrorPages();
+// 	std::map<int, std::string>::iterator it_begin = errors.begin();
+// 	while (it_begin != errors.end()) {
+// 		std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n";
+// 		++it_begin;
+// 	}
+// 	std::cout <<  std::endl;
+// 	std::cout << "\tLocations: \n";
+// 	for (int j=0; j<_servers[i].getLocations().size(); j++) {
+// 		std::cout << "--------Name: |" << _servers[i].getLocations()[j].getName() << "|\n";
+// 		std::cout << "\tAutoIndex: |" << std::boolalpha <<\
+// 		 _servers[i].getLocations()[j].getAutoIndex() << "|" << std::endl;
+// 		std::cout << "\tRoot: ";
+// 		(!(_servers[i].getLocations()[j].getRoot().empty())?std::cout << "|" << \
+// 		_servers[i].getLocations()[j].getRoot() << "|" << std::endl:std::cout << std::endl);
+// 		std::cout << "\tRedirection: ";
+// 		(!(_servers[i].getLocations()[j].getRedirection().empty())?\
+// 			std::cout << "|" << _servers[i].getLocations()[j].getRedirection() << "| |"\
+// 		 << _servers[i].getLocations()[j].getRedirectionCode() << "|\n":std::cout << "\n");
+// 		std::cout << "\tMethods: ";
+// 		if (!_servers[i].getLocations().empty()) {
+// 			for (int x=0; x<_servers[i].getLocations()[j].getMethods().size(); x++) {
+// 				std::cout << "|" << _servers[i].getLocations()[j].getMethods()[x] << "| ";
+// 			} std::cout <<  std::endl;
+// 		}
+// 		std::cout << "\tIndex: ";
+// 		(!( _servers[i].getLocations()[j].getIndex().empty())?std::cout << "|"\
+// 		 << _servers[i].getLocations()[j].getIndex() << "|" << std::endl:std::cout << "\n");
+// 		std::cout << "\tErrorPages: ";
+// 		std::map<int, std::string> errors = _servers[i].getLocations()[j].getErrorPages();
+// 		std::map<int, std::string>::iterator it_begin = errors.begin();
+// 		while (it_begin != errors.end()) {
+// 			std::cout << "|" << it_begin->first << "|" << it_begin->second << "|\n\t";
+// 			++it_begin;
+// 		}
+// 		std::cout <<  std::endl;
+// 		std::cout << "\tScripts: ";
+// 		std::map<std::string, std::string> scripts = _servers[i].getLocations()[j].getScripts();
+// 		std::map<std::string, std::string>::iterator start = scripts.begin();
+// 		while (start != scripts.end()) {
+// 			std::cout << "|" << start->first << "|" << start->second << "|\n\t";
+// 			++start;
+// 		}
+// 		std::cout <<  std::endl;
+// 	}
 	
 
-	std::cout <<   "------------------------" << std::endl;
-	}
+// 	std::cout <<   "------------------------" << std::endl;
+// 	}
 	
 //~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
 }
@@ -707,4 +707,8 @@ void ft::Parser::checkAllKeys(std::vector<std::string> config) {
 			throw std::invalid_argument("Parser error: incorrect key in the config");
 		it++;
 	}
+}
+
+std::vector<ft::Server> &ft::Parser::getServers() {
+	return _servers;
 }

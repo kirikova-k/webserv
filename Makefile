@@ -1,43 +1,30 @@
-SRC		=	$(addprefix src/, main.cpp Parser.cpp Server.cpp ServerParameters.cpp Location.cpp)
-OBJDIR	=	obj
-SRCDIR	=	src
-OBJ		=	$(addprefix  obj/, $(notdir  $(SRC:.cpp=.o)))
+NAME = Webserver
 
-NAME	=	webserv
-CC		=	c++
-#-Wall -Wextra -Werror # 
-CFLAGS	=	 -MD -MP -g -std=c++98 -I include
-DEPENDS :=	$(addprefix  obj/, $(notdir  $(SRC:.cpp=.d)))
+SRC =	$(wildcard ./src/*.cpp)
+INC = $(wildcard ./inc/*.hpp)
+OBJ	= $(SRC:.cpp=.o)
 
-.PHONY	:	all re clean fclean
+CC = c++
+FLAG = -Wall -Wextra -Werror -std=c++98
 
-all		:	$(NAME)
+.PHONY: all bonus clean fclean re
 
-$(NAME)	:	$(OBJ) Makefile
-			$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
+all: $(NAME)
 
-$(OBJDIR)/%.o		:	$(SRCDIR)/%.cpp
-			$(CC) $(CFLAGS) -c -o $@ $<
+$(NAME): $(OBJ) $(INC) Makefile
+	@$(CC) $(FLAG) $(OBJ) -o $(NAME)
 
-clean	:	
-			rm -f $(OBJ) $(DEPENDS)
+%.o: ./src/%.cpp ./inc/%.hpp
+	@$(CC) $(FLAG) -c $< -o $@
 
-fclean	:	clean
-			rm -f $(NAME)
-			rm -rf null.d
-			
+clean:
+	@rm -f $(OBJ)
 
-x		:	all
-			./$(NAME) default.conf
+fclean: clean
+	@rm -f $(NAME)
 
-leaks	:	all
-			leaks --atExit -- ./$(NAME)
-			
-$(OBJ)			: | $(OBJDIR)
+re: fclean all
 
-$(OBJDIR)		: 
-					mkdir $(OBJDIR)
-
-re		:	fclean all
-
--include $(DEPENDS)
+x: $(NAME)
+	@rm -f $(OBJ)
+	./$(NAME)

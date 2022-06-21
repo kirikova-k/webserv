@@ -1,4 +1,4 @@
-#include "Location.hpp"
+#include "../inc/Location.hpp"
 
 ft::Location::Location() {
 	name = "";

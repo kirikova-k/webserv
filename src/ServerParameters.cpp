@@ -1,5 +1,5 @@
-#include "ServerParameters.hpp"
-#include "Parser.hpp"
+#include "../inc/ServerParameters.hpp"
+#include "../inc/Parser.hpp"
 
 ft::ValidConfigKeys::ValidConfigKeys() { 
 
