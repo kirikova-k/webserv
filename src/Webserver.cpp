@@ -9,13 +9,13 @@ Webserver::Webserver(std::vector<ft::Server> &_servers) : servers(_servers) {}
 
 Webserver::~Webserver() {}
 
-void Webserver::run()
+void Webserver::run(int serv_id)
 {
 	struct sockaddr_in addr_in;
 	addr_in.sin_family = AF_INET;
-	addr_in.sin_port = htons(servers[0].getPort());///
+	addr_in.sin_port = htons(servers[serv_id].getPort());///
 	addr_in.sin_len = sizeof(addr_in);
-	addr_in.sin_addr.s_addr = inet_addr(servers[0].getHost().c_str());///
+	addr_in.sin_addr.s_addr = inet_addr(servers[serv_id].getHost().c_str());///
 	bzero(&(addr_in.sin_zero), 8);
 	
 	listen_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -37,7 +37,7 @@ void Webserver::run()
 	nfds = 1;
 	while (end_server == false)
 	{
-		listenLoop();
+		listenLoop(serv_id);
 	}
 	for (int i = 0; i < nfds; i ++)
 	{
@@ -46,7 +46,7 @@ void Webserver::run()
 	}
 }
 
-void Webserver::listenLoop()
+void Webserver::listenLoop(int serv_id)
 {
 	int timeout = (3 * 60 * 1000);
 	int new_sd = -1;
@@ -91,22 +91,22 @@ void Webserver::listenLoop()
 		else
 		{
 			printf("Descriptor %d is readable\n", fds[i].fd);
-			if (sendAndReceive(fds[i].fd, i) == -1)
+			if (sendAndReceive(fds[i].fd, i, serv_id) == -1)
 				closeConnection(i);
 		}
 	}
 }
 
-int Webserver::sendAndReceive(int fd, int i)
+int Webserver::sendAndReceive(int fd, int i, int serv_id)
 {
 	std::cout << "Send and receive, fd " << fd << std::endl;
 	if (connections.find(fd) == connections.end())
 	{
 		fds[i].events = POLLIN;
 		// Request request(readRequest(fd), config);
-		Request request(readRequest(fd), servers[0]);///
+		Request request(readRequest(fd, serv_id), servers[serv_id]);///
 		// Handler handler(request, config);
-		Handler handler(request, servers[0]);///
+		Handler handler(request, servers[serv_id]);///
 		Response response = handler.getResponse();
 		Connection *connection = new Connection(request, response, fd); // удалять в дескрипторе
 		connections[fd] = connection;
@@ -119,7 +119,7 @@ int Webserver::sendAndReceive(int fd, int i)
 	
 	if (connections[fd]->getResponse().getBodyFile() != "" && connections[fd]->isFinished() == false)
 	{
-		if (sendFile(*connections[fd]) < 0)
+		if (sendFile(*connections[fd], serv_id) < 0)
 			return -1;
 	}
 	std::string delimeter = "\r\n\r\n";
@@ -133,10 +133,10 @@ int Webserver::sendAndReceive(int fd, int i)
 	return 0;
 }
 
-std::string Webserver::readRequest(int fd)
+std::string Webserver::readRequest(int fd, int serv_id)
 {
 	// char buf[config.getBufferSize()];
-	char buf[servers[0].getMaxBodySize()];///
+	char buf[servers[serv_id].getMaxBodySize()];///
 	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
 	printf("read %zu bytes\n", bytes_read);	
 	if (bytes_read == 0)
@@ -150,14 +150,14 @@ std::string Webserver::readRequest(int fd)
 }
 
 
-int Webserver::sendFile(Connection & connection)
+int Webserver::sendFile(Connection & connection, int serv_id)
 {
 	std::cout << "send file" << std::endl;
 	FILE* file = fopen(connection.getResponse().getBodyFile().c_str(), "rb");
 	fseek(file, connection.getPosition(), SEEK_SET);
 	
 	// int bufferSize = config.getBufferSize();
-	int bufferSize = servers[0].getMaxBodySize();///
+	int bufferSize = servers[serv_id].getMaxBodySize();///
 	char buffer[bufferSize];
 	int bytes_read = fread(buffer, sizeof(char), bufferSize, file);
 	connection.setPosition(connection.getPosition() + bytes_read);
@@ -199,4 +199,8 @@ int Webserver::err(std::string msg) // добавить код возврата 
 	std::cerr << "Error " << errno << " in " << msg << std::endl;
 	close(this->listen_socket);
 	exit(errno);
+}
+
+const std::vector<ft::Server> &Webserver::getServers() {
+	return servers;
 }

@@ -32,7 +32,9 @@ class Webserver
 		Webserver(std::vector<ft::Server> &_servers);
 		~Webserver();
 		
-		void run();
+		void run(int serv_id);
+
+		const std::vector<ft::Server> &getServers();
 
 	private:
 
@@ -48,16 +50,16 @@ class Webserver
 
 		std::map<int, Connection*> connections;
 
-		void listenLoop();
-		int sendAndReceive(int fd, int i);
+		void listenLoop(int serv_id);
+		int sendAndReceive(int fd, int i, int serv_id);
 		void closeConnection(int i);
 		
-		std::string readRequest(int fd);
+		std::string readRequest(int fd, int serv_id);
 		int sendHeader(Connection & connection);
 		int sendBody(Connection & connection);
 
 		void sendResponse(Connection &connection);
-		int sendFile(Connection &connection);
+		int sendFile(Connection &connection, int serv_id);
 
 		int err(std::string msg);
 

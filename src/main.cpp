@@ -36,5 +36,8 @@ int main(int ac, char **av) {
 		std::cerr << e.what() << '\n';
 	}
 	Webserver webserver(parser.getServers());
-	webserver.run();
+	for(size_t serv_id = 0; serv_id < webserver.getServers().size(); serv_id++) {
+		webserver.run(serv_id);
+	}
+	
 }
