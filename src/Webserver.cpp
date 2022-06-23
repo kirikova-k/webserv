@@ -41,6 +41,17 @@ void Webserver::prepare(int serv_id)
 
 void Webserver::run()
 {
+	for(int i = 0; i < servers.size(); i++) {
+		servs_fd[fds[i].fd] = (getServers()[i]);
+	}
+	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
+	std::map<int, ft::Server>::iterator it_begin = servs_fd.begin();
+	while (it_begin != servs_fd.end()) {
+		std::cout << "|" << it_begin->first << "|" << it_begin->second.getPort() << "|\n";
+		++it_begin;
+	}
+	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
+	
 	
 	end_server = false;
 	nfds = getServers().size();
@@ -68,7 +79,7 @@ void Webserver::listenLoop()
 	if (rc == 0)
 		err("poll timeout");
 	int current_size = nfds;
-	for (int i = 0; i < current_size; i++)
+	for (int i = 0; i < nfds; i++)
 	{
 		if (fds[i].revents == 0)
 			continue;
@@ -83,6 +94,7 @@ void Webserver::listenLoop()
 			printf("Listening socket is readable\n");
 			do
 			{
+				current_fd = fds[i].fd;
 				int new_sd = accept(fds[i].fd, NULL, NULL);
 				if (new_sd < 0)
 				{
@@ -115,11 +127,16 @@ int Webserver::sendAndReceive(int fd, int i)
 	if (connections.find(fd) == connections.end())
 	{
 		fds[i].events = POLLIN;
+
+		std::cout << "\ncurrent_fd: " << current_fd << std::endl;
+
+
+		
 		// Request request(readRequest(fd), config);
 		// std::cout << "buffer size " << servers[i].getMaxBodySize() << std::endl;
-		Request request(readRequest(fd, i), servers[i]);///
+		Request request(readRequest(fd, i), servs_fd[current_fd]);///
 		// Handler handler(request, config);
-		Handler handler(request, servers[i]);///
+		Handler handler(request, servs_fd[current_fd]);///
 		Response response = handler.getResponse();
 		Connection *connection = new Connection(request, response, fd); // удалять в дескрипторе
 		connections[fd] = connection;
@@ -150,6 +167,7 @@ std::string Webserver::readRequest(int fd, int i)
 {
 	// char buf[config.getBufferSize()];
 	char buf[BUFFER_SIZE];///
+	std::cout << "\nPORT " << getServers()[i].getPort() << std::endl; 
 	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
 	printf("read %zu bytes\n", bytes_read);	
 	if (bytes_read == 0)

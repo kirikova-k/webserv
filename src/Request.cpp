@@ -65,6 +65,7 @@ void Request::parseRequest(std::string rawData)
 	end = line.find(' ', start);
 	// std::string homeDir = config.getHomeDir();
 	std::string homeDir = server.getRoot();///
+	std::cout << "homeDir " << homeDir << std::endl;
 
 	this->url = homeDir + line.substr(start + 1, end - start - 1);
 

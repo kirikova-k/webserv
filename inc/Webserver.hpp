@@ -37,7 +37,11 @@ class Webserver
 
 		const std::vector<ft::Server> &getServers();
 
+		std::map<int, ft::Server> servs_fd;
+
 	private:
+
+		int current_fd;
 
 		// Config config;
 		std::vector<ft::Server> servers;

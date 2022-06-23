@@ -59,7 +59,7 @@ void Handler::methodDelete()
 
 void Handler::returnFile()
 {
-	std::cout << 
+	std::cout << request.getUrl() << std::endl;
 	// if (request.getUrl() == config.getHomeDir())
 	if (request.getUrl() == server.getRoot())
 		// request.setUrl(request.getUrl() + config.getHomePage());
