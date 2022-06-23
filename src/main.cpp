@@ -37,7 +37,10 @@ int main(int ac, char **av) {
 	}
 	Webserver webserver(parser.getServers());
 	for(size_t serv_id = 0; serv_id < webserver.getServers().size(); serv_id++) {
-		webserver.run(serv_id);
+		webserver.prepare(serv_id);
 	}
+	// for(size_t serv_id = 0; serv_id < webserver.getServers().size(); serv_id++) {
+		webserver.run();
+	// }
 	
 }

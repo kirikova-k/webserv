@@ -3,13 +3,15 @@
 #include "../inc/Response.hpp"
 #include "../inc/Handler.hpp"
 
+#define BUFFER_SIZE 1000
+
 Webserver::Webserver() {}
 // Webserver::Webserver(Config config) : config(config) {}
 Webserver::Webserver(std::vector<ft::Server> &_servers) : servers(_servers) {}
 
 Webserver::~Webserver() {}
 
-void Webserver::run(int serv_id)
+void Webserver::prepare(int serv_id)
 {
 	struct sockaddr_in addr_in;
 	addr_in.sin_family = AF_INET;
@@ -18,6 +20,7 @@ void Webserver::run(int serv_id)
 	addr_in.sin_addr.s_addr = inet_addr(servers[serv_id].getHost().c_str());///
 	bzero(&(addr_in.sin_zero), 8);
 	
+
 	listen_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_socket < 0)
 		err("socket");
@@ -28,16 +31,23 @@ void Webserver::run(int serv_id)
 		err("bind");
 	if (listen(listen_socket, SOMAXCONN) == -1)
 		err("listen");
+	// memset(fds[serv_id], 0, sizeof(fds));
+	fds[serv_id].fd = listen_socket;
+	fds[serv_id].events = POLLIN;
+	sockets.push_back(listen_socket);
 
-	memset(fds, 0, sizeof(fds));
-	fds[0].fd = listen_socket;
-	fds[0].events = POLLIN;
+	// return listen_socket;
+}
 
+void Webserver::run()
+{
+	
 	end_server = false;
-	nfds = 1;
+	nfds = getServers().size();
+	std::cout << nfds << std::endl;
 	while (end_server == false)
 	{
-		listenLoop(serv_id);
+		listenLoop();
 	}
 	for (int i = 0; i < nfds; i ++)
 	{
@@ -46,11 +56,12 @@ void Webserver::run(int serv_id)
 	}
 }
 
-void Webserver::listenLoop(int serv_id)
+void Webserver::listenLoop()
 {
 	int timeout = (3 * 60 * 1000);
 	int new_sd = -1;
 	std::cout << "--- wainting on poll" << std::endl;
+	// std::cout << fds[0].fd << " " << fds[1].fd << " " << fds[2].fd << " fds qty " << nfds << std::endl;
 	int rc = poll(fds, nfds, timeout);
 	if (rc < 0)
 		err("poll");
@@ -67,12 +78,12 @@ void Webserver::listenLoop(int serv_id)
 			end_server = true;
 			break;
 		}
-		if (fds[i].fd == listen_socket)
+		if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end())
 		{
 			printf("Listening socket is readable\n");
 			do
 			{
-				int new_sd = accept(listen_socket, NULL, NULL);
+				int new_sd = accept(fds[i].fd, NULL, NULL);
 				if (new_sd < 0)
 				{
 					if (errno != EWOULDBLOCK)
@@ -91,22 +102,24 @@ void Webserver::listenLoop(int serv_id)
 		else
 		{
 			printf("Descriptor %d is readable\n", fds[i].fd);
-			if (sendAndReceive(fds[i].fd, i, serv_id) == -1)
+			if (sendAndReceive(fds[i].fd, i) == -1)
 				closeConnection(i);
 		}
 	}
 }
 
-int Webserver::sendAndReceive(int fd, int i, int serv_id)
+
+int Webserver::sendAndReceive(int fd, int i)
 {
 	std::cout << "Send and receive, fd " << fd << std::endl;
 	if (connections.find(fd) == connections.end())
 	{
 		fds[i].events = POLLIN;
 		// Request request(readRequest(fd), config);
-		Request request(readRequest(fd, serv_id), servers[serv_id]);///
+		// std::cout << "buffer size " << servers[i].getMaxBodySize() << std::endl;
+		Request request(readRequest(fd, i), servers[i]);///
 		// Handler handler(request, config);
-		Handler handler(request, servers[serv_id]);///
+		Handler handler(request, servers[i]);///
 		Response response = handler.getResponse();
 		Connection *connection = new Connection(request, response, fd); // удалять в дескрипторе
 		connections[fd] = connection;
@@ -119,7 +132,7 @@ int Webserver::sendAndReceive(int fd, int i, int serv_id)
 	
 	if (connections[fd]->getResponse().getBodyFile() != "" && connections[fd]->isFinished() == false)
 	{
-		if (sendFile(*connections[fd], serv_id) < 0)
+		if (sendFile(*connections[fd], i) < 0)
 			return -1;
 	}
 	std::string delimeter = "\r\n\r\n";
@@ -133,10 +146,10 @@ int Webserver::sendAndReceive(int fd, int i, int serv_id)
 	return 0;
 }
 
-std::string Webserver::readRequest(int fd, int serv_id)
+std::string Webserver::readRequest(int fd, int i)
 {
 	// char buf[config.getBufferSize()];
-	char buf[servers[serv_id].getMaxBodySize()];///
+	char buf[BUFFER_SIZE];///
 	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
 	printf("read %zu bytes\n", bytes_read);	
 	if (bytes_read == 0)
@@ -157,7 +170,7 @@ int Webserver::sendFile(Connection & connection, int serv_id)
 	fseek(file, connection.getPosition(), SEEK_SET);
 	
 	// int bufferSize = config.getBufferSize();
-	int bufferSize = servers[serv_id].getMaxBodySize();///
+	int bufferSize = BUFFER_SIZE;///
 	char buffer[bufferSize];
 	int bytes_read = fread(buffer, sizeof(char), bufferSize, file);
 	connection.setPosition(connection.getPosition() + bytes_read);
