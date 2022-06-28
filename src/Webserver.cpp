@@ -3,7 +3,7 @@
 #include "../inc/Response.hpp"
 #include "../inc/Handler.hpp"
 
-#define BUFFER_SIZE 1000
+// #define BUFFER_SIZE 1000
 
 Webserver::Webserver() {}
 // Webserver::Webserver(Config config) : config(config) {}
@@ -85,7 +85,7 @@ void Webserver::listenLoop()
 			continue;
 		if (fds[i].revents != POLLIN && fds[i].revents != POLLOUT)
 		{
-			std::cout << "Error in revents" << std::endl;
+			std::cout << "Error in revents " << fds[i].revents << std::endl;
 			end_server = true;
 			break;
 		}
@@ -94,7 +94,7 @@ void Webserver::listenLoop()
 			printf("Listening socket is readable\n");
 			do
 			{
-				current_fd = fds[i].fd;
+				listen_fds = fds[i];
 				int new_sd = accept(fds[i].fd, NULL, NULL);
 				if (new_sd < 0)
 				{
@@ -107,107 +107,87 @@ void Webserver::listenLoop()
 				}
 				std::cout << "new incoming connection " << new_sd << std::endl;
 				fds[nfds].fd = new_sd;
-				fds[nfds].events = POLLIN;
+				fds[nfds].events = POLLOUT;
+
+				// connections[nfds] = new Connection(nfds, fds[i].fd);
+
 				nfds++;
 			} while (new_sd != -1);
 		}
 		else
 		{
-			printf("Descriptor %d is readable\n", fds[i].fd);
-			if (sendAndReceive(fds[i].fd, i) == -1)
+			printf("Descriptor %d is readable, listen fd %d\n", fds[i].fd, listen_fds.fd);
+			if (sendAndReceive(fds[i], listen_fds) == -1)
+			{
+				std::cout << "Send error" << std::endl;
 				closeConnection(i);
+			}
 		}
 	}
 }
 
-
-int Webserver::sendAndReceive(int fd, int i)
+int Webserver::sendAndReceive(struct pollfd fds, struct pollfd listen_fds)
 {
-	std::cout << "Send and receive, fd " << fd << std::endl;
-	if (connections.find(fd) == connections.end())
-	{
-		fds[i].events = POLLIN;
+	std::cout << "Send and receive, fd " << fds.fd << std::endl;
+	if (connections.find(fds.fd) == connections.end())
+			connections[fds.fd] = new Connection(fds.fd, listen_fds.fd);
 
-		std::cout << "\ncurrent_fd: " << current_fd << std::endl;
+	if (listen_fds.revents == POLLIN)
+	{
+
+		connections[fds.fd]->readRequest(listen_fds.fd);
+		Handler handler(connections[fds.fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
+		connections[fds.fd]->setResponse(handler.getResponse());
+	}
+
+	if (fds.revents == POLLOUT)
+	{
+		if (connections[fds.fd]->sendHeaders() < 0)
+			return -1;
+		if (connections[fds.fd]->sendBody() < 0)
+			return -1;
+		std::cout << "DELETE CONNECTION\n";
+		connections.erase(fds.fd);
+	}
 
 
-		
-		// Request request(readRequest(fd), config);
-		// std::cout << "buffer size " << servers[i].getMaxBodySize() << std::endl;
-		Request request(readRequest(fd, i), servs_fd[current_fd]);///
-		// Handler handler(request, config);
-		Handler handler(request, servs_fd[current_fd]);///
-		Response response = handler.getResponse();
-		Connection *connection = new Connection(request, response, fd); // удалять в дескрипторе
-		connections[fd] = connection;
-		fds[i].events = POLLOUT;
-		if (send(fd, response.toString().c_str(), response.toString().length(), 0) < 0)
-			return -1;
-		std::cout << "***\n" << response.toString() << "\n***\n" << std::endl;
-	}
-	fds[i].events = POLLOUT;
-	
-	if (connections[fd]->getResponse().getBodyFile() != "" && connections[fd]->isFinished() == false)
-	{
-		if (sendFile(*connections[fd], i) < 0)
-			return -1;
-	}
-	std::string delimeter = "\r\n\r\n";
-	if (connections[fd]->isFinished())
-	{
-		if (send(fd, delimeter.c_str(), delimeter.length(), 0) < 0)
-			return -1;
-		closeConnection(i);
-		connections.erase(fd);
-	}
+	// if (con.getStatus() == READ)
+	// {
+	// 	std::cout << "revents in0 " << fds.revents << std::endl;
+	// 	con.readRequest(listen_fd);
+	// }
+	// if (con.getStatus() == READ_DONE)
+	// {
+	// 	std::cout << "revents in1 " << fds.revents << std::endl;
+	// 	// fds.revents = 0;
+	// 	// std::cout << "listen fd " << listen_fd << std::endl;
+	// 	// std::cout << "get request " << con.getRequest().getUrl() << std::endl;
+	// 	Handler handler(con.getRequest(), servs_fd[listen_fd]); // add root dir setup
+	// 	con.setResponse(handler.getResponse());
+	// 	if (con.sendHeaders() < 0)
+	// 		return -1;
+	// 	con.setStatus(WRITE);
+	// }
+	// if (con.getStatus() == WRITE)
+	// {
+	// 	std::cout << "revents in2 " << fds.revents << std::endl;
+	// 	// fds.revents = 0;
+	// 	if (con.sendBody() < 0)
+	// 		return -1;
+	// }
+	// if (con.getStatus() == CLOSE)
+	// {
+	// 	closeConnection(fds.fd);
+	// 	connections.erase(fds.fd);
+	// }
+	// if (con.getStatus() == WRITE_DONE)
+	// {
+	// 	std::cout << "DELETE CONNECTION\n";
+	// 	connections.erase(fds.fd);
+	// }
 	return 0;
 }
 
-std::string Webserver::readRequest(int fd, int i)
-{
-	// char buf[config.getBufferSize()];
-	char buf[BUFFER_SIZE];///
-	std::cout << "\nPORT " << getServers()[i].getPort() << std::endl; 
-	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
-	printf("read %zu bytes\n", bytes_read);	
-	if (bytes_read == 0)
-	{
-		std::cout << "Can't receive client's request" << std::endl;
-	}
-	buf[bytes_read] = '\0';
-	std::string requestData = buf;
-	
-	return requestData;
-}
-
-
-int Webserver::sendFile(Connection & connection, int serv_id)
-{
-	std::cout << "send file" << std::endl;
-	FILE* file = fopen(connection.getResponse().getBodyFile().c_str(), "rb");
-	fseek(file, connection.getPosition(), SEEK_SET);
-	
-	// int bufferSize = config.getBufferSize();
-	int bufferSize = BUFFER_SIZE;///
-	char buffer[bufferSize];
-	int bytes_read = fread(buffer, sizeof(char), bufferSize, file);
-	connection.setPosition(connection.getPosition() + bytes_read);
-	int l = send(connection.getFd(), buffer, bytes_read, 0);
-	if (l < 0)
-	{
-		std::cout << "SEND ERROR" << std::endl;
-		return -1;
-	}
-	fclose(file);
-	std::cout << "file sent ok: " << bytes_read << " bytes, position " << connection.getPosition() 
-		<< " length " << connection.getResponse().getLength() << std::endl;
-
-	if (connection.getPosition() == connection.getResponse().getLength())
-		connection.setFinished(true);
-	else
-		connection.setFinished(false);
-	return 0;
-}
 
 void Webserver::closeConnection(int i)
 {

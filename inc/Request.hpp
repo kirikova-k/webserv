@@ -12,7 +12,7 @@ class Request
 	public:
 		Request();
 		// Request(std::string rawData, Config config);
-		Request(std::string rawData, ft::Server _server);
+		Request(std::string rawData);
 		Request(Request const & other);
 		~Request();
 

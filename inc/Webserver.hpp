@@ -41,7 +41,7 @@ class Webserver
 
 	private:
 
-		int current_fd;
+		struct pollfd listen_fds;
 
 		// Config config;
 		std::vector<ft::Server> servers;
@@ -57,7 +57,7 @@ class Webserver
 		std::vector<int> sockets;
 
 		void listenLoop();
-		int sendAndReceive(int fd, int i);
+		int sendAndReceive(struct pollfd fds, struct pollfd listen_fds);
 		void closeConnection(int i);
 		
 		std::string readRequest(int fd, int serv_id);

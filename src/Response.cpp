@@ -84,7 +84,7 @@ void Response::setHeaders(std::string headers)
 	this->headers = headers;
 }
 
-void Response::setBody(std::string body)
+void Response::setBodyFile(std::string body)
 {
 	this->bodyFile = body;
 }

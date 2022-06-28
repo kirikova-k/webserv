@@ -6,11 +6,11 @@
 
 #include <fcntl.h>
 
-Handler::Handler() {}
+// Handler::Handler() {}
 
-Handler::Handler(Request req, ft::Server _server) : request(req), server(_server)
+Handler::Handler(Request & req, ft::Server & server) : request(req), server(server)
 {
-	// std::cout << "METHOD: " << request.getMethod() << std::endl;
+	// std::cout << "Handler constructor\n ";// << request.getMethod() << std::endl;
 	// if (request.check())
 	// {
 		if (request.getMethod() == "GET")
@@ -59,30 +59,33 @@ void Handler::methodDelete()
 
 void Handler::returnFile()
 {
-	std::cout << request.getUrl() << std::endl;
+	std::cout << "root in Handler " << server.getRoot() << std::endl;
+	std::string url = server.getRoot() + request.getUrl();
+	std::cout << "URL in handler: " << url << std::endl;
 	// if (request.getUrl() == config.getHomeDir())
-	if (request.getUrl() == server.getRoot())
+	if (url == server.getRoot())
+		url = url + server.getIndex();
 		// request.setUrl(request.getUrl() + config.getHomePage());
-		request.setUrl(request.getUrl() + server.getIndex());
-	const char *file_path = request.getUrl().c_str();
+		// request.setUrl(request.getUrl() + server.getIndex());
+	const char *file_path = url.c_str();
 	FILE* file = fopen(file_path, "rb");
 	if (file == NULL)
 	{
-		std::cout << "Can't open file " << request.getUrl() << std::endl;
+		std::cout << "Can't open file " << url << std::endl;
 		response.setStatusCode(404);
 		response.setContentLength(0);
-		response.setBody("");
+		response.setBodyFile("");
 	}
-	else 
+	else
 	{
-		std::cout << "File opened OK, URL: " << request.getUrl() << std::endl;
+		std::cout << "File opened OK, URL: " << url << std::endl;
 		response.setStatusCode(200);
 		
 		fseek(file, 0L, SEEK_END);
 		int size = ftell(file);
 
 		response.setContentLength(size);
-		response.setBody(request.getUrl());
+		response.setBodyFile(url);
 		
 		fclose(file);
 	}

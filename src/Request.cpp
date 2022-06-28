@@ -2,7 +2,7 @@
 
 Request::Request() {}
 
-Request::Request(std::string rawData, ft::Server _server) : rawData(rawData), server(_server)
+Request::Request(std::string rawData) : rawData(rawData)
 {
 	if (this->rawData != "")
 		parseRequest(this->rawData);
@@ -23,7 +23,14 @@ Request::Request(Request const & other)
 
 Request Request::operator=(Request const & other)
 {
-	*this = Request(other);
+	this->method = other.method;
+	this->url = other.url;
+	this->httpVersion = other.httpVersion;
+	this->headers = other.headers;
+	this->body = other.body;
+	this->bodyPOST = other.bodyPOST;
+	this->body = other.body;
+	this->boundary = other.boundary;
 	return *this;
 }
 
@@ -64,10 +71,10 @@ void Request::parseRequest(std::string rawData)
 	start = end + 1;
 	end = line.find(' ', start);
 	// std::string homeDir = config.getHomeDir();
-	std::string homeDir = server.getRoot();///
-	std::cout << "homeDir " << homeDir << std::endl;
+	// std::string homeDir = server.getRoot();///
+	// std::cout << "homeDir " << homeDir << std::endl;
 
-	this->url = homeDir + line.substr(start + 1, end - start - 1);
+	this->url = line.substr(start + 1, end - start - 1);
 
 	start = end + 1;
 	end = line.length();
@@ -137,10 +144,10 @@ void Request::parseMultipart(std::string rawData, int start)
 	std::cout << "FIND " << find << std::endl;
 }
 
-int Request::check()
-{
-	if (this->rawData == "")
-		return 0;
-	else
-		return 1;
-}
+// int Request::check()
+// {
+// 	if (this->rawData == "")
+// 		return 0;
+// 	else
+// 		return 1;
+// }

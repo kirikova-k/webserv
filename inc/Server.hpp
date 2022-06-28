@@ -24,6 +24,7 @@ namespace ft {
 		public:
 		Server();
 		~Server();
+		// Server(Server & server);
 		Server &operator=(const Server &rhs);
 
 		void setHost(const std::string &_host);

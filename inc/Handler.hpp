@@ -11,18 +11,18 @@
 class Handler
 {
 	public:
-		Handler();
+		// Handler();
 		// Handler(Request request, Config config);
-		Handler(Request request, ft::Server _server);
+		Handler(Request & request, ft::Server & server);
 		~Handler();
 
 		Response getResponse();
 
 	private:
 		// Config config;
-		ft::Server server;
+		ft::Server & server;
 
-		Request request;
+		Request & request;
 		Response response;
 
 		void methodGet();
