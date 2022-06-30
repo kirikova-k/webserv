@@ -41,21 +41,21 @@ void Webserver::prepare(int serv_id)
 
 void Webserver::run()
 {
-	for(int i = 0; i < servers.size(); i++) {
-		servs_fd[fds[i].fd] = (getServers()[i]);
-	}
+	// for(int i = 0; i < servers.size(); i++) {
+	// 	servs_fd[fds[i].fd] = (getServers()[i]);
+	// }
 	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
-	std::map<int, ft::Server>::iterator it_begin = servs_fd.begin();
-	while (it_begin != servs_fd.end()) {
-		std::cout << "|" << it_begin->first << "|" << it_begin->second.getPort() << "|\n";
-		++it_begin;
-	}
+	// std::map<int, ft::Server>::iterator it_begin = servs_fd.begin();
+	// while (it_begin != servs_fd.end()) {
+	// 	std::cout << "|" << it_begin->first << "|" << it_begin->second.getPort() << "|\n";
+	// 	++it_begin;
+	// }
 	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
 	
 	
 	end_server = false;
 	nfds = getServers().size();
-	std::cout << nfds << std::endl;
+	std::cout << nfds << std::endl;// кол-во слушающих
 	while (end_server == false)
 	{
 		listenLoop();
@@ -78,64 +78,128 @@ void Webserver::listenLoop()
 		err("poll");
 	if (rc == 0)
 		err("poll timeout");
-	int current_size = nfds;
-	for (int i = 0; i < nfds; i++)
-	{
-		if (fds[i].revents == 0)
-			continue;
-		if (fds[i].revents != POLLIN && fds[i].revents != POLLOUT)
-		{
-			std::cout << "Error in revents " << fds[i].revents << std::endl;
-			end_server = true;
-			break;
-		}
-		if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end())
-		{
-			printf("Listening socket is readable\n");
-			do
-			{
-				listen_fds = fds[i];
-				int new_sd = accept(fds[i].fd, NULL, NULL);
-				if (new_sd < 0)
-				{
-					if (errno != EWOULDBLOCK)
-					{
-						std::cerr << "accept error" << std::endl;
-						end_server = true;
+	else {
+		for (int i = 0; i < nfds; i++) {
+			if (fds[i].revents == 0)
+				continue;
+			if (fds[i].revents & POLLIN ) {
+				if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end()) {
+					// std::cout << fds[i].fd << " : Listening socket is readable. Need to accept new fd\n";///
+					do {
+						listen_fds = fds[i];
+						int new_sd = accept(fds[i].fd, NULL, NULL);
+						if (new_sd < 0)
+						{
+							if (errno != EWOULDBLOCK)
+							{
+								std::cerr << "accept error" << std::endl;
+								end_server = true;
+							}
+							break;
+						}
+						std::cout << "new incoming connection " << new_sd << std::endl;///
+						fds[nfds].fd = new_sd;
+						fds[nfds].events = POLLIN;
+						connections[nfds] = new Connection(fds[nfds].fd, fds[i].fd);
+						nfds++;
+
+						//~~~~~~~print all fd now~~~~~~~~~//
+						// for (size_t i = 0; i < nfds; i++)///
+						// {
+						// 	std::cout << fds[i].fd << " ";
+						// }
+						// std::cout << "\n";
+						//~~~~~~~print all fd now~~~~~~~~~//
 					}
-					break;
+					while (new_sd > 0);
+					// sleep(30);///
+				
+				} else {
+					std::cout << fds[i].fd << " : new socket is readable; listening : "<< listen_fds.fd<< "\n";
+					// continue;
+					if (sendAndReceive(fds[i], listen_fds) == -1) {
+						std::cout << "Send error" << std::endl;
+						closeConnection(i);
+					}
 				}
-				std::cout << "new incoming connection " << new_sd << std::endl;
-				fds[nfds].fd = new_sd;
-				fds[nfds].events = POLLOUT;
+				fds[i].events = 0;
+			}
+			else if (fds[i].revents & POLLOUT) {
+				std::cout << fds[i].fd << " : waiting for response\n";
+				if (sendAndReceive(fds[i], listen_fds) == -1) {
+						std::cout << "Send error" << std::endl;
+						closeConnection(i);
+				}
+				fds[i].events = 0;
 
-				// connections[nfds] = new Connection(nfds, fds[i].fd);
-
-				nfds++;
-			} while (new_sd != -1);
-		}
-		else
-		{
-			printf("Descriptor %d is readable, listen fd %d\n", fds[i].fd, listen_fds.fd);
-			if (sendAndReceive(fds[i], listen_fds) == -1)
-			{
-				std::cout << "Send error" << std::endl;
-				closeConnection(i);
+			}
+			else {
+				std::cout << "Error in revents " << fds[i].revents << std::endl;
+				end_server = true;
+				break;
 			}
 		}
 	}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+	// int current_size = nfds;
+// 	for (int i = 0; i < nfds; i++) {
+// 		if (fds[i].revents == 0)
+// 			continue;
+// 		if (fds[i].revents != POLLIN && fds[i].revents != POLLOUT)
+// 		{
+// 			std::cout << "Error in revents " << fds[i].revents << std::endl;
+// 			end_server = true;
+// 			break;
+// 		}
+// 		if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end())
+// 		{
+// 			std::cout << fds[i].fd << " : Listening socket is readable\n";
+// 			do
+// 			{
+// 				listen_fds = fds[i];
+// 				int new_sd = accept(fds[i].fd, NULL, NULL);
+// 				if (new_sd < 0)
+// 				{
+// 					if (errno != EWOULDBLOCK)
+// 					{
+// 						std::cerr << "accept error" << std::endl;
+// 						end_server = true;
+// 					}
+// 					break;
+// 				}
+// 				std::cout << "new incoming connection " << new_sd << std::endl;
+// 				fds[nfds].fd = new_sd;
+// 				// std::cout << fds[nfds - 1].fd << "_____________\n";
+// 				fds[nfds].events = POLLOUT;
+
+// 				connections[nfds] = new Connection(nfds, fds[i].fd);
+
+// 				nfds++;
+// 			} while (new_sd != -1);
+// 		}
+// 		else
+// 		{
+// 			printf("Descriptor %d is readable, listen fd %d\n", fds[i].fd, listen_fds.fd);
+// 			if (sendAndReceive(fds[i], listen_fds) == -1)
+// 			{
+// 				std::cout << "Send error" << std::endl;
+// 				closeConnection(i);
+// 			}
+// 		}
+// 	}
 }
 
-int Webserver::sendAndReceive(struct pollfd fds, struct pollfd listen_fds)
+int Webserver::sendAndReceive(struct pollfd fds, struct pollfd listen_fds) //все ок приходит что надо
 {
-	std::cout << "Send and receive, fd " << fds.fd << std::endl;
+	// (void)listen_fds;
+	// std::cout << "Send and receive, fd " << fds.fd << std::endl;
 	if (connections.find(fds.fd) == connections.end())
 			connections[fds.fd] = new Connection(fds.fd, listen_fds.fd);
 
-	if (listen_fds.revents == POLLIN)
+	if (fds.revents == POLLIN)
 	{
 
-		connections[fds.fd]->readRequest(listen_fds.fd);
+		connections[fds.fd]->readRequest(fds.fd);
 		Handler handler(connections[fds.fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
 		connections[fds.fd]->setResponse(handler.getResponse());
 	}

@@ -4,7 +4,9 @@
 
 Connection::Connection() {}
 
-Connection::Connection(int fd, int listen_fd) : fd(fd), listen_fd(listen_fd), status(READ), position(0) {}
+Connection::Connection(int fd, int listen_fd) : fd(fd), listen_fd(listen_fd), status(READ), position(0) {
+	std::cout << "listen: " << listen_fd << " ; for answer: " << fd << std::endl;
+}
 
 Connection::~Connection() {}
 

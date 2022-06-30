@@ -28,7 +28,6 @@ class Webserver
 {
 	public:
 		Webserver();
-		// Webserver(Config config);
 		Webserver(std::vector<ft::Server> &_servers);
 		~Webserver();
 		
