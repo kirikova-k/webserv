@@ -30,6 +30,8 @@ Connection & Connection::operator=(Connection const & other)
 
 int Connection::getFd() const { return this->fd; }
 
+int Connection::getListenFd() const { return this->listen_fd; }
+
 Request & Connection::getRequest() {/* std::cout << "in getter url\n " << this->request.getUrl(); */return this->request; }
 
 Response & Connection::getResponse() { return this->response; }

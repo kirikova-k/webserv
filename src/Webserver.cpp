@@ -109,7 +109,7 @@ void Webserver::listenLoop()
 				fds[nfds].fd = new_sd;
 				fds[nfds].events = POLLOUT;
 
-				// connections[nfds] = new Connection(nfds, fds[i].fd);
+				connections[nfds] = new Connection(nfds, fds[i].fd);
 
 				nfds++;
 			} while (new_sd != -1);
@@ -135,8 +135,8 @@ int Webserver::sendAndReceive(struct pollfd fds, struct pollfd listen_fds)
 	if (listen_fds.revents == POLLIN)
 	{
 
-		connections[fds.fd]->readRequest(listen_fds.fd);
-		Handler handler(connections[fds.fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
+		connections[fds.fd]->readRequest(connections[fds.fd]->getListenFd());
+		Handler handler(connections[fds.fd]->getRequest(), servs_fd[connections[fds.fd]->getListenFd()]); // add root dir setup
 		connections[fds.fd]->setResponse(handler.getResponse());
 	}
 
