@@ -39,7 +39,7 @@ class Connection
 		void setPosition(int counter);
 		void setStatus(ConStatus status);
 
-		void readRequest(int listen_fd);
+		int readRequest();
 		int sendHeaders();
 		int sendBody();
 		

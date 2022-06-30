@@ -4,7 +4,9 @@
 
 Connection::Connection() {}
 
-Connection::Connection(int fd, int listen_fd) : fd(fd), listen_fd(listen_fd), status(READ), position(0) {}
+Connection::Connection(int fd, int listen_fd) : fd(fd), listen_fd(listen_fd), status(READ), position(0) {
+	// std::cout << "listen: " << listen_fd << " ; for answer: " << fd << std::endl;
+}
 
 Connection::~Connection() {}
 
@@ -50,12 +52,11 @@ void Connection::setPosition(int position) { this->position = position; }
 void Connection::setStatus(ConStatus status) { this->status = status; }
 
 
-void Connection::readRequest(int listen_fd)
+int Connection::readRequest()
 {
 	char buf[BUFFER_SIZE];
-	// std::cout << "\nPORT " << getServers()[i].getPort() << std::endl; 
-	std::cout << "fd before recv " << listen_fd << std::endl;
-	size_t bytes_read = recv(listen_fd, buf, sizeof(buf), 0);
+	// std::cout << "fd before recv " << listen_fd << std::endl;
+	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
 	printf("read %zu bytes\n", bytes_read);	
 	if (bytes_read == 0)
 	{
@@ -67,19 +68,22 @@ void Connection::readRequest(int listen_fd)
 	request = Request(requestData);
 	status = READ_DONE;
 	std::cout << "Read ok, url in request " << request.getUrl() << " status " << status << std::endl;
+	return bytes_read;
 }
 
 int Connection::sendHeaders()
 {
-	std::cout << "send headers" << std::endl;
-	if (send(fd, response.toString().c_str(), response.toString().length(), 0) < 0)
-		return -1;
+	if (status == READ_DONE) {
+		std::cout << "send headers" << std::endl;
+		if (send(fd, response.toString().c_str(), response.toString().length(), 0) < 0)
+			return -1;
+	}
+	// status = WRITE;
 	return 0;
 }
 
 int Connection::sendBody()
 {
-	
 	if (response.getBodyFile() != "")
 	{
 		std::cout << "send file" << std::endl;

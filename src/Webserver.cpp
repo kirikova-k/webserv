@@ -6,9 +6,7 @@
 // #define BUFFER_SIZE 1000
 
 Webserver::Webserver() {}
-// Webserver::Webserver(Config config) : config(config) {}
 Webserver::Webserver(std::vector<ft::Server> &_servers) : servers(_servers) {}
-
 Webserver::~Webserver() {}
 
 void Webserver::prepare(int serv_id)
@@ -20,7 +18,6 @@ void Webserver::prepare(int serv_id)
 	addr_in.sin_addr.s_addr = inet_addr(servers[serv_id].getHost().c_str());///
 	bzero(&(addr_in.sin_zero), 8);
 	
-
 	listen_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_socket < 0)
 		err("socket");
@@ -31,33 +28,23 @@ void Webserver::prepare(int serv_id)
 		err("bind");
 	if (listen(listen_socket, SOMAXCONN) == -1)
 		err("listen");
-	// memset(fds[serv_id], 0, sizeof(fds));
 	fds[serv_id].fd = listen_socket;
 	fds[serv_id].events = POLLIN;
 	sockets.push_back(listen_socket);
-
-	// return listen_socket;
 }
 
 void Webserver::run()
 {
 	for(int i = 0; i < servers.size(); i++) {
 		servs_fd[fds[i].fd] = (getServers()[i]);
-	}
-	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
-	std::map<int, ft::Server>::iterator it_begin = servs_fd.begin();
-	while (it_begin != servs_fd.end()) {
-		std::cout << "|" << it_begin->first << "|" << it_begin->second.getPort() << "|\n";
-		++it_begin;
-	}
-	//~~~~~~~~~~~~~~~~~~~~~PRINT~~~~~~~~~~~~~~~~~~~~~~~~//
-	
-	
+	}	
 	end_server = false;
 	nfds = getServers().size();
-	std::cout << nfds << std::endl;
+	std::cout << nfds << std::endl;// кол-во слушающих
 	while (end_server == false)
 	{
+		printFds();
+		printConnections();
 		listenLoop();
 	}
 	for (int i = 0; i < nfds; i ++)
@@ -72,122 +59,116 @@ void Webserver::listenLoop()
 	int timeout = (3 * 60 * 1000);
 	int new_sd = -1;
 	std::cout << "--- wainting on poll" << std::endl;
-	// std::cout << fds[0].fd << " " << fds[1].fd << " " << fds[2].fd << " fds qty " << nfds << std::endl;
 	int rc = poll(fds, nfds, timeout);
 	if (rc < 0)
 		err("poll");
 	if (rc == 0)
 		err("poll timeout");
-	int current_size = nfds;
-	for (int i = 0; i < nfds; i++)
-	{
-		if (fds[i].revents == 0)
-			continue;
-		if (fds[i].revents != POLLIN && fds[i].revents != POLLOUT)
-		{
-			std::cout << "Error in revents " << fds[i].revents << std::endl;
-			end_server = true;
-			break;
-		}
-		if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end())
-		{
-			printf("Listening socket is readable\n");
-			do
-			{
-				listen_fds = fds[i];
-				int new_sd = accept(fds[i].fd, NULL, NULL);
-				if (new_sd < 0)
-				{
-					if (errno != EWOULDBLOCK)
+	else {	
+		for (int i = 0; i < nfds; i++) {
+			if (fds[i].revents == 0)
+				continue;
+			if (std::find(sockets.begin(), sockets.end(), fds[i].fd) != sockets.end()) {
+				do {
+					listen_fds = fds[i];
+					int new_sd = accept(fds[i].fd, NULL, NULL);
+					if (new_sd < 0)
 					{
-						std::cerr << "accept error" << std::endl;
-						end_server = true;
+						if (errno != EWOULDBLOCK)
+						{
+							std::cerr << "accept error" << std::endl;
+							end_server = true;
+						}
+						break;
 					}
-					break;
+					std::cout << "new incoming connection " << new_sd << std::endl;///
+					fds[nfds].fd = new_sd;
+					fds[nfds].events = POLLIN;
+					connections[new_sd] = new Connection(new_sd, fds[i].fd);
+					std::cout << "new con " << connections[new_sd]->getFd() << "/" << connections[new_sd]->getListenFd() << std::endl;
+					nfds++;
 				}
-				std::cout << "new incoming connection " << new_sd << std::endl;
-				fds[nfds].fd = new_sd;
-				fds[nfds].events = POLLOUT;
-
-				connections[nfds] = new Connection(nfds, fds[i].fd);
-
-				nfds++;
-			} while (new_sd != -1);
-		}
-		else
-		{
-			printf("Descriptor %d is readable, listen fd %d\n", fds[i].fd, listen_fds.fd);
-			if (sendAndReceive(fds[i], listen_fds) == -1)
-			{
-				std::cout << "Send error" << std::endl;
+				while (new_sd > 0);
+			}
+			else if (fds[i].revents & POLLIN ) {
+				std::cout << fds[i].fd << " : new socket is readable; listening : "<< listen_fds.fd<< "\n";	
+				int fd = fds[i].fd;
+				int rcv = connections[fd]->readRequest();
+				if (rcv > 0) {
+					Handler handler(connections[fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
+					connections[fd]->setResponse(handler.getResponse());
+					if (connections[fd]->getStatus() == READ_DONE)
+						fds[i].events = POLLOUT;
+				}
+				else if (rcv == 0) {
+					closeConnection(i);
+					// connections.erase(fds[i].fd);
+				}
+				fds[i].revents = 0;
+			}
+			else if (fds[i].revents & POLLOUT) {
+				std::cout << fds[i].fd << " : waiting for response\n";
+				int fd = fds[i].fd;
+				if (connections[fd]->sendHeaders() < 0)
+					closeConnection(i);
+				if (connections[fd]->sendBody() < 0)
+					closeConnection(i);
+				if (connections[fd]->getStatus() == WRITE_DONE)
+					fds[i].events = POLLIN;
+				fds[i].revents = 0;
+			}
+			else if (fds[i].revents != POLLIN && fds[i].revents != POLLOUT) {
+				std::cout << "Close connection\n";
 				closeConnection(i);
+			}
+			else {
+				std::cout << "Error in revents " << fds[i].revents << std::endl;
+				end_server = true;
+				break;
 			}
 		}
 	}
 }
 
-int Webserver::sendAndReceive(struct pollfd fds, struct pollfd listen_fds)
-{
-	std::cout << "Send and receive, fd " << fds.fd << std::endl;
-	if (connections.find(fds.fd) == connections.end())
-			connections[fds.fd] = new Connection(fds.fd, listen_fds.fd);
+// int Webserver::sendResponse() {
 
-	if (listen_fds.revents == POLLIN)
-	{
+// }
 
-		connections[fds.fd]->readRequest(connections[fds.fd]->getListenFd());
-		Handler handler(connections[fds.fd]->getRequest(), servs_fd[connections[fds.fd]->getListenFd()]); // add root dir setup
-		connections[fds.fd]->setResponse(handler.getResponse());
+
+void Webserver::printFds() {
+	std::cout << "***\nnfds " << nfds << std::endl;
+	for (int i = 0; i < nfds; i++) {
+		std::cout << "fd " << fds[i].fd << " event ";
+		if (fds[i].events == POLLIN)
+			std::cout << "POLLIN ";
+		else if (fds[i].events == POLLOUT)
+			std::cout << "POLLOUT ";
+		else
+			std::cout << fds[i].events << std::endl;
+
+		if (fds[i].revents == POLLIN)
+			std::cout << "POLLIN" << std::endl;
+		else if (fds[i].revents == POLLOUT)
+			std::cout << "POLLOUT" << std::endl;
+		else
+			std::cout << fds[i].revents << std::endl;
 	}
-
-	if (fds.revents == POLLOUT)
-	{
-		if (connections[fds.fd]->sendHeaders() < 0)
-			return -1;
-		if (connections[fds.fd]->sendBody() < 0)
-			return -1;
-		std::cout << "DELETE CONNECTION\n";
-		connections.erase(fds.fd);
-	}
-
-
-	// if (con.getStatus() == READ)
-	// {
-	// 	std::cout << "revents in0 " << fds.revents << std::endl;
-	// 	con.readRequest(listen_fd);
-	// }
-	// if (con.getStatus() == READ_DONE)
-	// {
-	// 	std::cout << "revents in1 " << fds.revents << std::endl;
-	// 	// fds.revents = 0;
-	// 	// std::cout << "listen fd " << listen_fd << std::endl;
-	// 	// std::cout << "get request " << con.getRequest().getUrl() << std::endl;
-	// 	Handler handler(con.getRequest(), servs_fd[listen_fd]); // add root dir setup
-	// 	con.setResponse(handler.getResponse());
-	// 	if (con.sendHeaders() < 0)
-	// 		return -1;
-	// 	con.setStatus(WRITE);
-	// }
-	// if (con.getStatus() == WRITE)
-	// {
-	// 	std::cout << "revents in2 " << fds.revents << std::endl;
-	// 	// fds.revents = 0;
-	// 	if (con.sendBody() < 0)
-	// 		return -1;
-	// }
-	// if (con.getStatus() == CLOSE)
-	// {
-	// 	closeConnection(fds.fd);
-	// 	connections.erase(fds.fd);
-	// }
-	// if (con.getStatus() == WRITE_DONE)
-	// {
-	// 	std::cout << "DELETE CONNECTION\n";
-	// 	connections.erase(fds.fd);
-	// }
-	return 0;
+	std::cout << "***\n";
 }
 
+
+void Webserver::printConnections() {
+	std::cout << "total  " << connections.size() << " connections" << std::endl;
+	if ( connections.size() > 0) {
+		std::map<int, Connection*>::iterator it = connections.begin();
+		while (it != connections.end())
+		{
+			std::cout << "conn " << it->first << " fd " << it->second->getFd()
+				<< " listen " << it->second->getListenFd() << " status " << it->second->getStatus() << std::endl;
+			it++;
+		}
+	}
+}
 
 void Webserver::closeConnection(int i)
 {

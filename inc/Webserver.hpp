@@ -28,7 +28,6 @@ class Webserver
 {
 	public:
 		Webserver();
-		// Webserver(Config config);
 		Webserver(std::vector<ft::Server> &_servers);
 		~Webserver();
 		
@@ -43,7 +42,6 @@ class Webserver
 
 		struct pollfd listen_fds;
 
-		// Config config;
 		std::vector<ft::Server> servers;
 
 
@@ -65,7 +63,10 @@ class Webserver
 		int sendBody(Connection & connection);
 
 		void sendResponse(Connection &connection);
-		int sendFile(Connection &connection, int serv_id);
+		// int sendFile(Connection &connection, int serv_id);
+
+		void printFds();
+		void printConnections();
 
 		int err(std::string msg);
 

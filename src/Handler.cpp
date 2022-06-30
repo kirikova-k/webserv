@@ -36,7 +36,7 @@ void Handler::methodGet()
 
 void Handler::methodPost()
 {
-	// std::cout << "hello I'm POST meth" << std::endl;
+	std::cout << "hello I'm POST meth" << std::endl;
 	std::ofstream file(request.getUrl() + ".txt");
 	// std::cout << request.getBodyPOST().begin()->first << std::endl;
 
@@ -59,14 +59,11 @@ void Handler::methodDelete()
 
 void Handler::returnFile()
 {
-	std::cout << "root in Handler " << server.getRoot() << std::endl;
+	// std::cout << "root in Handler " << server.getRoot() << std::endl;
 	std::string url = server.getRoot() + request.getUrl();
-	std::cout << "URL in handler: " << url << std::endl;
-	// if (request.getUrl() == config.getHomeDir())
+	// std::cout << "URL in handler: " << url << std::endl;
 	if (url == server.getRoot())
 		url = url + server.getIndex();
-		// request.setUrl(request.getUrl() + config.getHomePage());
-		// request.setUrl(request.getUrl() + server.getIndex());
 	const char *file_path = url.c_str();
 	FILE* file = fopen(file_path, "rb");
 	if (file == NULL)
