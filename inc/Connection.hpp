@@ -10,7 +10,7 @@
 #include "Response.hpp"
 #include "Server.hpp"
 
-#define BUFFER_SIZE 10000
+#define BUFFER_SIZE 5000
 
 enum ConStatus
 {
@@ -51,4 +51,6 @@ class Connection
 		Response response;
 		int position;
 		ConStatus status;
+		std::vector<char*> buffers;
+		std::string boundary;
 };

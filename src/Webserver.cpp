@@ -43,8 +43,8 @@ void Webserver::run()
 	std::cout << nfds << std::endl;// кол-во слушающих
 	while (end_server == false)
 	{
-		printFds();
-		printConnections();
+		// printFds();
+		// printConnections();
 		listenLoop();
 	}
 	for (int i = 0; i < nfds; i ++)
@@ -101,6 +101,7 @@ void Webserver::listenLoop()
 						fds[i].events = POLLOUT;
 				}
 				else if (rcv == 0) {
+					connections[fd]->setStatus(READ_DONE);
 					closeConnection(i);
 					// connections.erase(fds[i].fd);
 				}

@@ -54,6 +54,7 @@ void Connection::setStatus(ConStatus status) { this->status = status; }
 
 int Connection::readRequest()
 {
+	
 	char buf[BUFFER_SIZE];
 	// std::cout << "fd before recv " << listen_fd << std::endl;
 	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);
@@ -63,6 +64,9 @@ int Connection::readRequest()
 		std::cout << "Can't receive client's request" << std::endl;
 	}
 	buf[bytes_read] = '\0';
+	buffers.push_back(buf);
+
+
 	std::string requestData = buf;
 	
 	request = Request(requestData);

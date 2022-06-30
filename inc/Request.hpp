@@ -21,6 +21,7 @@ class Request
 		std::string const getMethod() const;
 		std::string const getUrl() const;
 		std::string const getHttp() const;
+		std::string const getBoundary() const;
 
 		std::map<std::string, std::string> &getBodyPOST();
 

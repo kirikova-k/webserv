@@ -40,6 +40,11 @@ std::string const Request::getMethod() const
 {
 	return this->method;
 }
+		
+std::string const Request::getBoundary() const
+{
+	return this->boundary;
+}
 
 std::string const Request::getUrl() const
 {
@@ -63,45 +68,65 @@ void Request::setUrl(std::string url)
 
 void Request::parseRequest(std::string rawData)
 {
+	std::cout << "*** Request ***\n" << rawData << "\n***\n";
 	std::string line = rawData.substr(0, rawData.find('\n', 0));
-	size_t start;
-	size_t end = line.find(' ', 0);
-	this->method = line.substr(0, end);
-
-	start = end + 1;
-	end = line.find(' ', start);
-	// std::string homeDir = config.getHomeDir();
-	// std::string homeDir = server.getRoot();///
-	// std::cout << "homeDir " << homeDir << std::endl;
-
-	this->url = line.substr(start + 1, end - start - 1);
-
-	start = end + 1;
-	end = line.length();
-	this->httpVersion = rawData.substr(start, end - start - 1);
-	std::cout << this->method << " - " << this->url << std::endl;
-
-	start = end + 1;
-	end = rawData.find('\n', start);
-	while (end < rawData.length() - 1 && line != "")
-	{
-		line = rawData.substr(start, end - start - 1);
-		int delimiter = line.find(':', 0);
-
-		if (line.length() > 0)
+	if (line.find("WebKitFormBoundary") != std::string::npos) {
+		int found = rawData.find("filename=");
+		if (found > 0)
 		{
-			std::string key = line.substr(0, delimiter);
-			std::string value = line.substr(delimiter + 2, line.length());
-			// std::cout << "- " << key << " - " << value << std::endl;
-			this->headers[key] = value;
+			int start = found + 10;
+			int end = rawData.find("\"", start);
+			std::string filename = rawData.substr(start, end - start);
+			std::cout << "filename = " << filename << std::endl;
+			
+			start = rawData.find("\r\n\r\n", found) + 3;
+			end = rawData.find("------WebKitFormBoundary", start);
+			std::cout << "START END " << start << " " << end << std::endl;
+			FILE *file = fopen(filename.c_str(), "a");
+			fwrite(rawData.substr(start, end - start).c_str(),sizeof(char), end - start, file);
+			
+			fclose(file);
+
 		}
+	}
+	else {
+
+		size_t start;
+		size_t end = line.find(' ', 0);
+		this->method = line.substr(0, end);
+
+		start = end + 1;
+		end = line.find(' ', start);
+		this->url = line.substr(start + 1, end - start - 1);
+	
+		start = end + 1;
+		end = line.length();
+		this->httpVersion = rawData.substr(start, end - start - 1);
+		std::cout << this->method << " - " << this->url << std::endl;
+
 		start = end + 1;
 		end = rawData.find('\n', start);
+		while (end < rawData.length() - 1 && line != "")
+		{
+			line = rawData.substr(start, end - start - 1);
+			int delimiter = line.find(':', 0);
+
+			if (line.length() > 0)
+			{
+				std::string key = line.substr(0, delimiter);
+				std::string value = line.substr(delimiter + 2, line.length());
+				// std::cout << "- " << key << " - " << value << std::endl;
+				this->headers[key] = value;
+			}
+			start = end + 1;
+			end = rawData.find('\n', start);
+		}
+		if (this->method == "POST" && headers["Content-Type"] == "application/x-www-form-urlencoded")
+			parseUrlencoded(rawData, start);
+		else if (this->method == "POST" && headers["Content-Type"].substr(0, 19) == "multipart/form-data")
+			parseMultipart(rawData, start);
 	}
-	if (this->method == "POST" && headers["Content-Type"] == "application/x-www-form-urlencoded")
-		parseUrlencoded(rawData, start);
-	else if (this->method == "POST" && headers["Content-Type"].substr(0, 19) == "multipart/form-data")
-		parseMultipart(rawData, start);
+	
 }		
 
 void Request::parseUrlencoded(std::string rawData, int start)

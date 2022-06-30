@@ -37,18 +37,18 @@ void Handler::methodGet()
 void Handler::methodPost()
 {
 	std::cout << "hello I'm POST meth" << std::endl;
-	std::ofstream file(request.getUrl() + ".txt");
-	// std::cout << request.getBodyPOST().begin()->first << std::endl;
+	// std::ofstream file(request.getUrl() + ".txt");
+	// // std::cout << request.getBodyPOST().begin()->first << std::endl;
 
-	std::map<std::string, std::string>::iterator it;
-	for (it = request.getBodyPOST().begin(); it != request.getBodyPOST().end(); it++)
-	{
-		// std::cout << it->first << " - " << it->second << std::endl;
-		file << it->first
-				<< ':'
-				<< it->second 
-				<< std::endl;
-	}
+	// std::map<std::string, std::string>::iterator it;
+	// for (it = request.getBodyPOST().begin(); it != request.getBodyPOST().end(); it++)
+	// {
+	// 	// std::cout << it->first << " - " << it->second << std::endl;
+	// 	file << it->first
+	// 			<< ':'
+	// 			<< it->second 
+	// 			<< std::endl;
+	// }
 	this->returnFile();
 }
 
@@ -88,6 +88,8 @@ void Handler::returnFile()
 	}
 	response.setHttpVersion(request.getHttp());
 	response.setHeaders("Version: HTTP/1.1\r\nContent-Type: " + contentType());
+
+	std::cout << "*** Response ***\n" << response.toString() << "\n***\n";
 }
 
 std::string Handler::contentType()
