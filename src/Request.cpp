@@ -4,6 +4,7 @@ Request::Request() {}
 
 Request::Request(std::string rawData) : rawData(rawData)
 {
+	
 	if (this->rawData != "")
 		parseRequest(this->rawData);
 	// std::cout << "******" << rawData << "*****" << std::endl;
@@ -19,6 +20,8 @@ Request::Request(Request const & other)
 	this->bodyPOST = other.bodyPOST;
 	this->body = other.body;
 	this->boundary = other.boundary;
+	this->filename = other.filename;
+	this->dataType = other.dataType;
 }
 
 Request Request::operator=(Request const & other)
@@ -31,6 +34,8 @@ Request Request::operator=(Request const & other)
 	this->bodyPOST = other.bodyPOST;
 	this->body = other.body;
 	this->boundary = other.boundary;
+	this->filename = other.filename;
+	this->dataType = other.dataType;
 	return *this;
 }
 
@@ -56,6 +61,21 @@ std::string const Request::getHttp() const
 	return this->httpVersion;
 }
 
+std::string const Request::getFilename() const
+{
+	return this->filename;
+}
+
+std::string const Request::getBody() const
+{
+	return this->body;
+}
+
+int const Request::getDataType() const
+{
+	return this->dataType;
+}
+
 std::map<std::string, std::string> &Request::getBodyPOST()
 {
 	return this->bodyPOST;
@@ -68,29 +88,34 @@ void Request::setUrl(std::string url)
 
 void Request::parseRequest(std::string rawData)
 {
-	std::cout << "*** Request ***\n" << rawData << "\n***\n";
-	std::string line = rawData.substr(0, rawData.find('\n', 0));
-	if (line.find("WebKitFormBoundary") != std::string::npos) {
+    std::cout << "*** Request ***\n" << rawData << "\n***\n";
+    std::string line = rawData.substr(0, rawData.find('\n', 0));
+   
+    if (line.find("WebKitFormBoundary") != std::string::npos) {
+        dataType = 1;
 		int found = rawData.find("filename=");
-		if (found > 0)
-		{
-			int start = found + 10;
-			int end = rawData.find("\"", start);
-			std::string filename = rawData.substr(start, end - start);
-			std::cout << "filename = " << filename << std::endl;
+        if (found > 0)
+        {
+            int start = found + 10;
+            int end = rawData.find("\"", start);
+            filename = rawData.substr(start, end - start);
+            
+			// std::string upload_path =
+            // filename = "upload/" + filename;
+            std::cout << "filename = " << filename << std::endl;
+            start = rawData.find("\r\n\r\n", found) + 4;
+			end = rawData.size();
+			body = rawData.substr(start, end - start);
+            // end = rawData.find("------WebKitFormBoundary", start);
 			
-			start = rawData.find("\r\n\r\n", found) + 3;
-			end = rawData.find("------WebKitFormBoundary", start);
-			std::cout << "START END " << start << " " << end << std::endl;
-			FILE *file = fopen(filename.c_str(), "a");
-			fwrite(rawData.substr(start, end - start).c_str(),sizeof(char), end - start, file);
-			
-			fclose(file);
-
-		}
-	}
+            std::cout << "START END " << start << " " << end << std::endl;
+            // FILE *file = fopen(filename.c_str(), "a");
+            // fwrite(rawData.substr(start + 1, end - start).c_str(),sizeof(char), end - start, file);
+            // fclose(file);
+        }
+    }
 	else {
-
+		dataType = 0;
 		size_t start;
 		size_t end = line.find(' ', 0);
 		this->method = line.substr(0, end);
@@ -168,11 +193,3 @@ void Request::parseMultipart(std::string rawData, int start)
 	find = rawData.find(boundary, start);
 	std::cout << "FIND " << find << std::endl;
 }
-
-// int Request::check()
-// {
-// 	if (this->rawData == "")
-// 		return 0;
-// 	else
-// 		return 1;
-// }

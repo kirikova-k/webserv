@@ -28,6 +28,7 @@ class Handler
 		void methodGet();
 		void methodPost();
 		void methodDelete();
+		void saveFile();
 
 		void returnFile();
 		std::string contentType();

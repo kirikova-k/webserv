@@ -10,7 +10,7 @@
 #include "Response.hpp"
 #include "Server.hpp"
 
-#define BUFFER_SIZE 5000
+#define BUFFER_SIZE 10000
 
 enum ConStatus
 {

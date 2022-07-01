@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <map>
+#include <sys/stat.h>
 
 // #include "Config.hpp"
 #include "Server.hpp"
@@ -22,6 +23,9 @@ class Request
 		std::string const getUrl() const;
 		std::string const getHttp() const;
 		std::string const getBoundary() const;
+		int const getDataType() const;
+		std::string const getFilename() const;
+		std::string const getBody() const;
 
 		std::map<std::string, std::string> &getBodyPOST();
 
@@ -40,6 +44,8 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::map<std::string, std::string> bodyPOST; // post method
 		std::string body;
+		std::string filename;
+		int	dataType;
 		// std::string contentType;
 		std::string boundary;
 		// int contentLength;

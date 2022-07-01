@@ -19,6 +19,8 @@ Handler::Handler(Request & req, ft::Server & server) : request(req), server(serv
 			methodPost();
 		else if (request.getMethod() == "DELETE")
 			methodDelete();
+		else if (request.getDataType())
+			saveFile();
 	// }
 }
 
@@ -51,6 +53,27 @@ void Handler::methodPost()
 	// }
 	this->returnFile();
 }
+
+
+void Handler::saveFile() // добавить exception
+{
+	
+	std::string upload = server.getUploadPath().substr(1, server.getUploadPath().size() - 1);
+	
+	
+	
+	mkdir(upload.c_str(), 0777);
+	std::string filename = upload + request.getFilename();
+
+	std::cout << filename << std::endl;
+
+	FILE *file = fopen(filename.c_str(), "a");
+
+	int end = request.getBody().find("------WebKitFormBoundary");
+	fwrite(request.getBody().c_str(),sizeof(char), end - 1, file);
+	fclose(file);
+}
+
 
 void Handler::methodDelete()
 {

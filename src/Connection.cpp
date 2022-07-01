@@ -54,7 +54,6 @@ void Connection::setStatus(ConStatus status) { this->status = status; }
 
 int Connection::readRequest()
 {
-	
 	char buf[BUFFER_SIZE];
 	// std::cout << "fd before recv " << listen_fd << std::endl;
 	size_t bytes_read = recv(fd, buf, sizeof(buf), 0);

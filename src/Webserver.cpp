@@ -40,7 +40,6 @@ void Webserver::run()
 	}	
 	end_server = false;
 	nfds = getServers().size();
-	std::cout << nfds << std::endl;// кол-во слушающих
 	while (end_server == false)
 	{
 		// printFds();
@@ -96,6 +95,7 @@ void Webserver::listenLoop()
 				int rcv = connections[fd]->readRequest();
 				if (rcv > 0) {
 					Handler handler(connections[fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
+					// try - catch на случай если в хэндлере не создался файл или папка
 					connections[fd]->setResponse(handler.getResponse());
 					if (connections[fd]->getStatus() == READ_DONE)
 						fds[i].events = POLLOUT;
