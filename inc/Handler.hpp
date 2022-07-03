@@ -5,6 +5,9 @@
 // #include "Config.hpp"
 #include "Server.hpp"
 
+#include <fstream>
+#include <iostream>
+
 // #define HOME_PAGE "index.html"
 // #define HOME_DIR "res/"
 

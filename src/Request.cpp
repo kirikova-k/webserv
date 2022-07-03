@@ -2,12 +2,9 @@
 
 Request::Request() {}
 
-Request::Request(std::string rawData) : rawData(rawData)
+Request::Request(char *rawData, int size) : rawData(rawData), size(size)
 {
-	
-	if (this->rawData != "")
-		parseRequest(this->rawData);
-	// std::cout << "******" << rawData << "*****" << std::endl;
+	parseRequest(this->rawData);
 }
 
 Request::Request(Request const & other)
@@ -16,12 +13,11 @@ Request::Request(Request const & other)
 	this->url = other.url;
 	this->httpVersion = other.httpVersion;
 	this->headers = other.headers;
-	this->body = other.body;
 	this->bodyPOST = other.bodyPOST;
-	this->body = other.body;
-	this->boundary = other.boundary;
 	this->filename = other.filename;
-	this->dataType = other.dataType;
+	this->type = other.type;
+	this->size = other.size;
+	memcpy(this->body, other.body, BUFFER_SIZE);
 }
 
 Request Request::operator=(Request const & other)
@@ -30,12 +26,11 @@ Request Request::operator=(Request const & other)
 	this->url = other.url;
 	this->httpVersion = other.httpVersion;
 	this->headers = other.headers;
-	this->body = other.body;
 	this->bodyPOST = other.bodyPOST;
-	this->body = other.body;
-	this->boundary = other.boundary;
 	this->filename = other.filename;
-	this->dataType = other.dataType;
+	this->type = other.type;
+	this->size = other.size;
+	memcpy(this->body, other.body, BUFFER_SIZE);
 	return *this;
 }
 
@@ -44,11 +39,6 @@ Request::~Request() {}
 std::string const Request::getMethod() const
 {
 	return this->method;
-}
-		
-std::string const Request::getBoundary() const
-{
-	return this->boundary;
 }
 
 std::string const Request::getUrl() const
@@ -66,14 +56,19 @@ std::string const Request::getFilename() const
 	return this->filename;
 }
 
-std::string const Request::getBody() const
+char* Request::getBody()
 {
-	return this->body;
+	return &(body[0]);
 }
 
-int const Request::getDataType() const
+ReqType const Request::getType() const
 {
-	return this->dataType;
+	return this->type;
+}
+
+int Request::getSize() const
+{
+	return this->size;
 }
 
 std::map<std::string, std::string> &Request::getBodyPOST()
@@ -86,36 +81,19 @@ void Request::setUrl(std::string url)
 	this->url = url;
 }
 
-void Request::parseRequest(std::string rawData)
+void Request::setFilename(std::string filename)
 {
-    std::cout << "*** Request ***\n" << rawData << "\n***\n";
-    std::string line = rawData.substr(0, rawData.find('\n', 0));
-   
-    if (line.find("WebKitFormBoundary") != std::string::npos) {
-        dataType = 1;
-		int found = rawData.find("filename=");
-        if (found > 0)
-        {
-            int start = found + 10;
-            int end = rawData.find("\"", start);
-            filename = rawData.substr(start, end - start);
-            
-			// std::string upload_path =
-            // filename = "upload/" + filename;
-            std::cout << "filename = " << filename << std::endl;
-            start = rawData.find("\r\n\r\n", found) + 4;
-			end = rawData.size();
-			body = rawData.substr(start, end - start);
-            // end = rawData.find("------WebKitFormBoundary", start);
-			
-            std::cout << "START END " << start << " " << end << std::endl;
-            // FILE *file = fopen(filename.c_str(), "a");
-            // fwrite(rawData.substr(start + 1, end - start).c_str(),sizeof(char), end - start, file);
-            // fclose(file);
-        }
-    }
-	else {
-		dataType = 0;
+	this->filename = filename;
+}
+
+void Request::parseRequest(char *rawData)
+{
+						// std::cout << "*** Request ***\n" << rawData << "\n***\n";
+	std::string rawLine = rawData;
+	std::string line = rawLine.substr(0, rawLine.find('\n', 0));
+
+	if (line.find("HTTP") != std::string::npos) {
+		type = HEADERS;
 		size_t start;
 		size_t end = line.find(' ', 0);
 		this->method = line.substr(0, end);
@@ -126,33 +104,70 @@ void Request::parseRequest(std::string rawData)
 	
 		start = end + 1;
 		end = line.length();
-		this->httpVersion = rawData.substr(start, end - start - 1);
+		this->httpVersion = rawLine.substr(start, end - start - 1);
 		std::cout << this->method << " - " << this->url << std::endl;
 
 		start = end + 1;
-		end = rawData.find('\n', start);
-		while (end < rawData.length() - 1 && line != "")
+		end = rawLine.find('\n', start);
+		while (end < rawLine.length() - 1 && line != "")
 		{
-			line = rawData.substr(start, end - start - 1);
+			line = rawLine.substr(start, end - start - 1);
 			int delimiter = line.find(':', 0);
 
 			if (line.length() > 0)
 			{
 				std::string key = line.substr(0, delimiter);
 				std::string value = line.substr(delimiter + 2, line.length());
-				// std::cout << "- " << key << " - " << value << std::endl;
 				this->headers[key] = value;
 			}
 			start = end + 1;
-			end = rawData.find('\n', start);
+			end = rawLine.find('\n', start);
 		}
 		if (this->method == "POST" && headers["Content-Type"] == "application/x-www-form-urlencoded")
 			parseUrlencoded(rawData, start);
-		else if (this->method == "POST" && headers["Content-Type"].substr(0, 19) == "multipart/form-data")
-			parseMultipart(rawData, start);
-	}
+	} else
+		parseMultipart(rawData);
 	
+	// std::cout << "parse request done \n";
 }		
+
+void Request::parseMultipart(char *rawData)
+{
+	std::string rawLine = rawData;
+	std::string line = rawLine.substr(0, rawLine.find('\n', 0));
+	if (line.find(BOUNDARY) != std::string::npos) {
+		type = DATA_START;
+		int found = rawLine.find("filename=");
+		if (found != std::string::npos)
+		{
+			int start = found + 10;
+			int end = rawLine.find("\"", start);
+			filename = rawLine.substr(start, end - start);
+			start = rawLine.find("\r\n\r\n", found) + 4;
+			
+			char *find = strstr(&rawData[start], BOUNDARY);
+			int len;
+			if (find == NULL)
+				len = size - start;
+			else
+				len = find - &rawData[start] - 2;
+			size = len;
+			memcpy(body, &rawData[start], size);
+		}
+	} else {
+		type = DATA_CONT;
+		char *bound = strdup(BOUNDARY);
+		void *find = memmem(rawData, size, bound, strlen(bound));
+		free(bound);
+		if (find == NULL)
+			memcpy(body, rawData, size);
+		else {
+			int len = (char *)find - rawData - 2;
+			size = len;
+			memcpy(body, rawData, size);
+		}
+	}
+}
 
 void Request::parseUrlencoded(std::string rawData, int start)
 {
@@ -166,12 +181,10 @@ void Request::parseUrlencoded(std::string rawData, int start)
 			subLine = line.substr(start, line.find('&', 0));
 		else
 			subLine = line;
-		// std::cout << "sub line " << subLine << std::endl; //ex: key=val
 		int delimiter = subLine.find('=', 0);
 		std::string key = subLine.substr(0, delimiter);
 		std::string value = subLine.substr(delimiter + 1, line.length());
 		this->bodyPOST[key] = value;
-		// std::cout << "----- " << this->bodyPOST[key] << std::endl;
 		
 		if (line.find('&', 0) != std::string::npos)
 		{
@@ -182,14 +195,4 @@ void Request::parseUrlencoded(std::string rawData, int start)
 		else
 			line = "";
 	}
-}
-
-void Request::parseMultipart(std::string rawData, int start)
-{
-	int find = headers["Content-Type"].find("=", 0) + 1;
-	boundary = headers["Content-Type"].substr(find, headers["Content-Type"].length() - start);
-
-	std::cout << "BOUNDARY " << boundary << std::endl;
-	find = rawData.find(boundary, start);
-	std::cout << "FIND " << find << std::endl;
 }

@@ -5,12 +5,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string>
+#include <stdlib.h>
 
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Server.hpp"
 
-#define BUFFER_SIZE 10000
 
 enum ConStatus
 {
@@ -51,6 +51,5 @@ class Connection
 		Response response;
 		int position;
 		ConStatus status;
-		std::vector<char*> buffers;
-		std::string boundary;
+		std::string filename;
 };

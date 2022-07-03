@@ -3,8 +3,6 @@
 #include "../inc/Response.hpp"
 #include "../inc/Handler.hpp"
 
-// #define BUFFER_SIZE 1000
-
 Webserver::Webserver() {}
 Webserver::Webserver(std::vector<ft::Server> &_servers) : servers(_servers) {}
 Webserver::~Webserver() {}
@@ -55,10 +53,9 @@ void Webserver::run()
 
 void Webserver::listenLoop()
 {
-	int timeout = (3 * 60 * 1000);
 	int new_sd = -1;
 	std::cout << "--- wainting on poll" << std::endl;
-	int rc = poll(fds, nfds, timeout);
+	int rc = poll(fds, nfds, -1);
 	if (rc < 0)
 		err("poll");
 	if (rc == 0)
@@ -84,7 +81,6 @@ void Webserver::listenLoop()
 					fds[nfds].fd = new_sd;
 					fds[nfds].events = POLLIN;
 					connections[new_sd] = new Connection(new_sd, fds[i].fd);
-					std::cout << "new con " << connections[new_sd]->getFd() << "/" << connections[new_sd]->getListenFd() << std::endl;
 					nfds++;
 				}
 				while (new_sd > 0);
@@ -97,7 +93,7 @@ void Webserver::listenLoop()
 					Handler handler(connections[fd]->getRequest(), servs_fd[listen_fds.fd]); // add root dir setup
 					// try - catch на случай если в хэндлере не создался файл или папка
 					connections[fd]->setResponse(handler.getResponse());
-					if (connections[fd]->getStatus() == READ_DONE)
+					if (connections[fd]->getStatus() == READ_DONE && connections[fd]->getRequest().getType() == HEADERS)
 						fds[i].events = POLLOUT;
 				}
 				else if (rcv == 0) {
@@ -130,10 +126,6 @@ void Webserver::listenLoop()
 		}
 	}
 }
-
-// int Webserver::sendResponse() {
-
-// }
 
 
 void Webserver::printFds() {

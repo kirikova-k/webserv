@@ -10,18 +10,15 @@
 
 Handler::Handler(Request & req, ft::Server & server) : request(req), server(server)
 {
-	// std::cout << "Handler constructor\n ";// << request.getMethod() << std::endl;
-	// if (request.check())
-	// {
-		if (request.getMethod() == "GET")
-			methodGet();
-		else if (request.getMethod() == "POST")
-			methodPost();
-		else if (request.getMethod() == "DELETE")
-			methodDelete();
-		else if (request.getDataType())
-			saveFile();
-	// }
+	if (request.getType() != HEADERS)
+		saveFile();
+	else if (request.getMethod() == "GET")
+		methodGet();
+	else if (request.getMethod() == "POST")
+		methodPost();
+	else if (request.getMethod() == "DELETE")
+		methodDelete();
+	
 }
 
 Handler::~Handler() {}
@@ -38,42 +35,33 @@ void Handler::methodGet()
 
 void Handler::methodPost()
 {
-	std::cout << "hello I'm POST meth" << std::endl;
-	// std::ofstream file(request.getUrl() + ".txt");
-	// // std::cout << request.getBodyPOST().begin()->first << std::endl;
-
-	// std::map<std::string, std::string>::iterator it;
-	// for (it = request.getBodyPOST().begin(); it != request.getBodyPOST().end(); it++)
-	// {
-	// 	// std::cout << it->first << " - " << it->second << std::endl;
-	// 	file << it->first
-	// 			<< ':'
-	// 			<< it->second 
-	// 			<< std::endl;
-	// }
+	std::ofstream file(request.getUrl() + ".txt");
+	std::map<std::string, std::string>::iterator it;
+	for (it = request.getBodyPOST().begin(); it != request.getBodyPOST().end(); it++)
+	{
+		file << it->first
+				<< ':'
+				<< it->second 
+				<< std::endl;
+	}
 	this->returnFile();
 }
 
-
 void Handler::saveFile() // добавить exception
 {
-	
+	std::cout << "saving file " << request.getFilename() << std::endl;
 	std::string upload = server.getUploadPath().substr(1, server.getUploadPath().size() - 1);
-	
-	
-	
 	mkdir(upload.c_str(), 0777);
 	std::string filename = upload + request.getFilename();
-
-	std::cout << filename << std::endl;
-
-	FILE *file = fopen(filename.c_str(), "a");
-
-	int end = request.getBody().find("------WebKitFormBoundary");
-	fwrite(request.getBody().c_str(),sizeof(char), end - 1, file);
+	
+	FILE *file;
+	if (request.getType() == DATA_START)
+		file = fopen(filename.c_str(), "w");
+	else
+		file = fopen(filename.c_str(), "a");
+	fwrite(request.getBody(), sizeof(char), request.getSize(), file);
 	fclose(file);
 }
-
 
 void Handler::methodDelete()
 {
@@ -82,9 +70,7 @@ void Handler::methodDelete()
 
 void Handler::returnFile()
 {
-	// std::cout << "root in Handler " << server.getRoot() << std::endl;
 	std::string url = server.getRoot() + request.getUrl();
-	// std::cout << "URL in handler: " << url << std::endl;
 	if (url == server.getRoot())
 		url = url + server.getIndex();
 	const char *file_path = url.c_str();
@@ -110,9 +96,9 @@ void Handler::returnFile()
 		fclose(file);
 	}
 	response.setHttpVersion(request.getHttp());
-	response.setHeaders("Version: HTTP/1.1\r\nContent-Type: " + contentType());
+	response.setHeaders("Version: HTTP/1.1\r\nContent-Type: " + contentType() + "; charset=utf-8");
 
-	std::cout << "*** Response ***\n" << response.toString() << "\n***\n";
+	// std::cout << "*** Response ***\n" << response.toString() << "\n***\n";
 }
 
 std::string Handler::contentType()
