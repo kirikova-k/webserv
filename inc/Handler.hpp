@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <dirent.h>
 
 // #define HOME_PAGE "index.html"
 // #define HOME_DIR "res/"
@@ -37,6 +38,7 @@ class Handler
 		void returnFile();
 		void checkLocation();
 		void returnErrorPage();
+		void listing();
 
 		std::string contentType();
 

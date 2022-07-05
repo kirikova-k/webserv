@@ -18,7 +18,7 @@ Handler::Handler(Request & req, ft::Server server) : request(req), server(server
 	if (request.getType() != HEADERS)
 		saveFile();
 	else {
-		// checkLocation();
+		checkLocation();
 
 		if (request.getMethod() == "GET")
 			methodGet();
@@ -40,9 +40,11 @@ void Handler::checkLocation()
 		loc = request.getUrl().substr(0, find + 1);
 	else 
 		loc = request.getUrl() + "/";
+	// std::cout << "LOC " << loc << std::endl;
 	std::vector<ft::Location>::iterator it = server.getLocations().begin();
 	while (it != server.getLocations().end()) {
 		if (it->getName().substr(1, it->getName().length() - 1) == loc) {
+			// std::cout << "LOCATION FOUND " << loc << std::endl;
 			if (it->getIndex() != "") {
 				server.setIndex(it->getIndex());
 				if (request.getUrl() == it->getRoot().substr(0, it->getRoot().length() - 1))
@@ -51,12 +53,16 @@ void Handler::checkLocation()
 					request.setUrl(request.getUrl().substr(
 						it->getRoot().length(), request.getUrl().length() - it->getRoot().length()));
 			}
-			if (it->getRoot() != "")
+			if (it->getRoot() != "") 
 				server.setRoot(server.getRoot() + it->getRoot());
 			if (!it->getMethods().empty())
 				server.setMethods(it->getMethods());
 			if (!it->getErrorPages().empty())
 				server.setErrorPages(it->getErrorPages());
+			if (it->getRedirectionCode()) {
+				server.setRedirectionCode(it->getRedirectionCode());
+				server.setRedirection(it->getRedirection());
+			}
 			// Добавить max body size
 			server.setAutoIndex(it->getAutoIndex());
 		}
@@ -66,11 +72,10 @@ void Handler::checkLocation()
 
 void Handler::returnErrorPage()
  {
-	// std::cout << "ERROR PAGE " << server.getErrorPages().at(response.getStatus()) << std::endl;
 	if (server.getErrorPages().find(response.getStatus()) != server.getErrorPages().end()){
 		std::string url = server.getRoot().substr(0, server.getRoot().length() - 1) 
 					+ server.getErrorPages().at(response.getStatus());
-		std::cout << "URL " << url << std::endl;
+		std::cout << "Error page " << url << std::endl;
 		FILE* file = fopen(url.c_str(), "rb");
 		if (file != NULL) {
 			fseek(file, 0L, SEEK_END);
@@ -81,8 +86,7 @@ void Handler::returnErrorPage()
 			fclose(file);
 		}
 		else {
-			response.setStatusCode(500);
-			std::cout << "CAN NOT OPEN ERROR PAGE\n";
+			std::cout << "Can't open error page\n";
 		}
 	}
 }
@@ -96,10 +100,49 @@ Response Handler::getResponse()
 
 void Handler::methodGet()
 {
-	if (std::find(server.getMethods().begin(), server.getMethods().end(), "GET") == server.getMethods().end())
+	if (std::find(server.getMethods().begin(), server.getMethods().end(), "GET") == server.getMethods().end()) {
 		response.setStatusCode(405);
-	else
+		return;
+	}
+	if (server.getRedirectionCode()) {
+		response.setStatusCode(server.getRedirectionCode());
+		response.setHeaders("Location: " + server.getRedirection());
+		return;
+	}
+	std::cout << "---- " << request.getUrl() << " " << server.getRoot() << std::endl;
+	if (server.getAutoIndex()) { // && server.getRoot().find(request.getUrl()) != std::string::npos ) { 
+		listing();
+	} else 
 		this->returnFile();
+}
+
+void Handler::listing()
+{
+	std::cout << "URL " << request.getUrl() << std::endl;
+	
+	// int len = request.getUrl().size();
+	std::string dir = server.getRoot();
+	DIR *dirp = opendir(dir.c_str());
+	struct dirent *dp;
+
+	std::ofstream out;
+	out.open("listing.html");
+	if (out.is_open()) {
+		out << "<html><head><title>" << request.getUrl() << " listing</title></head><body>"
+		<< "<h1>Список файлов в папке " << request.getUrl() << "</h1>";
+		while ((dp = readdir(dirp)) != NULL) {
+			if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+				out << "<p><a href=\"" << request.getUrl() + "/" + dp->d_name << "\">" << dp->d_name << "</a></p>";
+		}
+		out << "<p>&nbsp;</p><p><a href=\"../index.html\">Вернуться на главную</a></p></body></html>";
+		response.setBodyFile("listing.html");
+		response.setStatusCode(200);
+		response.setContentLength(out.tellp());
+		response.setHeaders(response.getHeaders() + "\r\nContent-Type: " + contentType() + "; charset=utf-8");
+	}
+	
+	out.close();
+	closedir(dirp);
 }
 
 void Handler::methodPost()
@@ -113,7 +156,6 @@ void Handler::methodPost()
 		ss >> contentLength;
 		if (contentLength > server.getMaxBodySize()) {
 			response.setStatusCode(413);
-			// response.setHeaders("Version: HTTP/1.1");
 			return ;
 		}
 
