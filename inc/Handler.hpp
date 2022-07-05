@@ -2,8 +2,9 @@
 
 #include "Request.hpp"
 #include "Response.hpp"
-// #include "Config.hpp"
 #include "Server.hpp"
+#include "Location.hpp"
+
 
 #include <fstream>
 #include <iostream>
@@ -16,14 +17,14 @@ class Handler
 	public:
 		// Handler();
 		// Handler(Request request, Config config);
-		Handler(Request & request, ft::Server & server);
+		Handler(Request & request, ft::Server server);
 		~Handler();
 
 		Response getResponse();
 
 	private:
 		// Config config;
-		ft::Server & server;
+		ft::Server server;
 
 		Request & request;
 		Response response;
@@ -34,6 +35,9 @@ class Handler
 		void saveFile();
 
 		void returnFile();
+		void checkLocation();
+		void returnErrorPage();
+
 		std::string contentType();
 
 		// void readFile(unsigned char* buffer, size_t size, const char* file_path);

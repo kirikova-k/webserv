@@ -6,6 +6,8 @@ Response::Response()
 	initializeCodes();
 	initializeContentTypes();
 	this->sent = true;
+	contentLength = 0;
+	bodyFile = "";
 }
 
 Response::~Response() {}
@@ -54,9 +56,19 @@ int Response::getLength()
 	return this->contentLength;
 }
 
+int Response::getStatus()
+{
+	return this->statusCode;
+}
+
 std::string Response::getBodyFile()
 {
 	return this->bodyFile;
+}
+
+std::string Response::getHeaders()
+{
+	return this->headers;
 }
 
 std::string Response::getContentType(std::string ext)

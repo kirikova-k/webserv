@@ -14,7 +14,9 @@ class Response
 
 		std::string getStatusText();
 		std::string getBodyFile();
+		std::string getHeaders();
 		int getLength();
+		int getStatus();
 		std::string getContentType(std::string ext);
 		bool isSent();
 

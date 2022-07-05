@@ -71,6 +71,11 @@ int Request::getSize() const
 	return this->size;
 }
 
+std::map<std::string, std::string> &Request::getHeaders()
+{
+	return this->headers;
+}
+
 std::map<std::string, std::string> &Request::getBodyPOST()
 {
 	return this->bodyPOST;
@@ -88,7 +93,7 @@ void Request::setFilename(std::string filename)
 
 void Request::parseRequest(char *rawData)
 {
-						// std::cout << "*** Request ***\n" << rawData << "\n***\n";
+						std::cout << "*** Request ***\n" << rawData << "\n***\n";
 	std::string rawLine = rawData;
 	std::string line = rawLine.substr(0, rawLine.find('\n', 0));
 
@@ -101,6 +106,8 @@ void Request::parseRequest(char *rawData)
 		start = end + 1;
 		end = line.find(' ', start);
 		this->url = line.substr(start + 1, end - start - 1);
+		if (url != "" && url.at(url.length() - 1) == '/')
+			this->url = this->url.substr(0, url.length() - 1);
 	
 		start = end + 1;
 		end = line.length();

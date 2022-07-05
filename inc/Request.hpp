@@ -31,6 +31,7 @@ class Request
 		ReqType const getType() const;
 		int getSize() const;
 
+		std::map<std::string, std::string> &getHeaders();
 		std::map<std::string, std::string> &getBodyPOST();
 
 		void setUrl(std::string url);
