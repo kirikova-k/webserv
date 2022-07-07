@@ -24,6 +24,7 @@ enum ValidLocKeys {
 	Location_root,
 	Location_redirection,
 	Location_error_page,
+	Location_max_body_size,
 	Bin_path_py,
 	Bin_path_sh,
 	Path_cgi,
@@ -84,7 +85,7 @@ namespace ft {
 		void fillLocationUploadPath(std::string key, std::string line, ft::Location& location);
 		void fillLocationErrorsPages(std::string key, std::string line, ft::Location& location);
 		void fillLocationScripts(std::string key, std::string line, ft::Location& location);
-
+		void fillLocationMaxBodySize(std::string key, std::string line, ft::Location& location);
 
 	};
 }

@@ -1,16 +1,21 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/Webserver",
-            "args": ["${workspaceFolder}/testconfig.conf"],
-            "cwd": "${workspaceFolder}"
-        }
-    ]
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "(lldb) Launch", // без разницы
+			"type": "cppdbg",  // тип дебеггера ставится сам
+			"request": "launch", // хз 
+			"program": "${workspaceFolder}/Webserv", // путь до файла, который нужно запустить
+			"args": ["testconfig.conf"], // аргументы если нужны для запуска
+			"stopAtEntry": false, // останавливаться до запуска main
+			"cwd": "${workspaceFolder}", // задать адрес до папки проекта 
+			"environment": [],
+			"externalConsole": false, 
+			"MIMode": "lldb", // сам ставится
+			"preLaunchTask": "C/C++: clang++ build active file" // какую задачу выполнить из tasks.json
+		}
+	]
 }

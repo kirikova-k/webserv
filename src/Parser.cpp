@@ -87,6 +87,10 @@ void ft::Parser::parse () {
 // 		(!(_servers[i].getLocations()[j].getRedirection().empty())?\
 // 			std::cout << "|" << _servers[i].getLocations()[j].getRedirection() << "| |"\
 // 		 << _servers[i].getLocations()[j].getRedirectionCode() << "|\n":std::cout << "\n");
+
+// 		std::cout << "\tmaxBodySize: ";
+// 		std::cout << "|" << _servers[i].getLocations()[j].getMaxBodySize() << "|\n"; 
+		
 // 		std::cout << "\tMethods: ";
 // 		if (!_servers[i].getLocations().empty()) {
 // 			for (int x=0; x<_servers[i].getLocations()[j].getMethods().size(); x++) {
@@ -196,12 +200,31 @@ void ft::Parser::fillLocation(std::string key, std::string line, ft::Location& l
 		case LocationUploadPath:
 			fillLocationUploadPath(key, line, location);
 			break;
+		case Location_max_body_size:
+			fillLocationMaxBodySize(key, line, location);
+			break;
 		case Bin_path_py:
 			fillLocationScripts(key, line, location);
 			break;
 		case Bin_path_sh:
 			fillLocationScripts(key, line, location);
 			break;
+	}
+}
+
+void ft::Parser::fillLocationMaxBodySize(std::string key, std::string line, ft::Location& location) {
+	std::vector<std::string> value;
+
+	value = splitString(key, line);
+	if (location.getMaxBodySize() != 0 or value.size() != 1)
+		throw std::invalid_argument("Parser error: root max body size error");
+	if (value[0][value[0].size() - 1] == 'M') {
+		value[0] = value[0].substr(0, value[0].size() - 1);
+		location.setMaxBodySize(checkPortVal(value[0]) * 1024 * 1024);
+	} else if (isdigit(value[0][value[0].size() - 1])) {
+		location.setMaxBodySize(checkPortVal(value[0]) * 1024);
+	} else {
+		throw std::invalid_argument("Parser error: wrong value root MaxBodySize");
 	}
 }
 

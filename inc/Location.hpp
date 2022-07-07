@@ -15,6 +15,7 @@ namespace ft {
 		std::string upload_path;
 		std::string redirection;
 		int redirection_code;
+		int maxBodySize;
 		bool autoindex;
 		std::vector<std::string> methods;
 		std::map<int, std::string> errorPages;
@@ -57,6 +58,9 @@ namespace ft {
 		void setScripts(const std::map<std::string, std::string> &_scripts);
 		const std::map<std::string, std::string> &getScripts() const;
 		void setScriptsVal(const std::string& script, const std::string& path);
+
+		void setMaxBodySize(const int &_maxBodySize);
+		const int &getMaxBodySize() const;
 	};
 }
 

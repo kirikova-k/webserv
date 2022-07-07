@@ -3,7 +3,7 @@
 
 ft::ValidConfigKeys::ValidConfigKeys() { 
 
-	std::string validParams[] = { "location", "methods", "root", "redirection", "error_page", "bin_path_py", "bin_path_sh", "path_cgi", "index", "upload_path", "autoindex" };
+	std::string validParams[] = { "location", "methods", "root", "redirection", "error_page", "client_max_body_size", "bin_path_py", "bin_path_sh", "path_cgi", "index", "upload_path", "autoindex" };
 
 	for (size_t i = 0; i < 11; i++) {
 		locParams.push_back(validParams[i]);

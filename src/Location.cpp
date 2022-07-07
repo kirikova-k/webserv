@@ -7,6 +7,7 @@ ft::Location::Location() {
 	upload_path = "";
 	redirection = "";
 	redirection_code = 0;
+	maxBodySize = 0;
 	autoindex = false;
 	methods = std::vector<std::string>();
 	errorPages = std::map<int, std::string>();
@@ -20,6 +21,7 @@ ft::Location &ft::Location::operator=(const Location &rhs) {
 	upload_path = rhs.upload_path;
 	redirection = rhs.redirection;
 	redirection_code = rhs.redirection_code;
+	maxBodySize = rhs.maxBodySize;
 	autoindex = rhs.autoindex;
 	methods = rhs.methods;
 	errorPages = rhs.errorPages;
@@ -97,4 +99,11 @@ const std::map<std::string, std::string> &ft::Location::getScripts() const {
 }
 void ft::Location::setScriptsVal(const std::string& script, const std::string& path) {
 	scripts[script] = path;
+}
+
+void ft::Location::setMaxBodySize(const int &_maxBodySize) {
+	maxBodySize = _maxBodySize;
+}
+const int &ft::Location::getMaxBodySize() const {
+	return maxBodySize;
 }
